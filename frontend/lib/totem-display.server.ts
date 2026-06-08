@@ -1,4 +1,5 @@
 import Ad from "@/models/Ad"
+import Content from "@/models/Content"
 import Faq from "@/models/Faq"
 import Totem from "@/models/Totem"
 import { resolveTotemRef } from "@/lib/totem-resolve"
@@ -132,11 +133,17 @@ export async function getTotemFaqForDisplay(totemRef: string) {
   const faq = await Faq.findOne({
     totemId: totem._id,
     isActive: true,
-  }).sort({ createdAt: -1 })
+  })
+    .sort({ createdAt: -1 })
+    .lean()
 
   if (!faq) {
     return { hasFaq: false, items: [], title: "Preguntas Frecuentes" }
   }
 
-  return faq
+  return {
+    hasFaq: true,
+    title: faq.title,
+    items: faq.items ?? [],
+  }
 }

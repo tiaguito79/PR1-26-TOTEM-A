@@ -3,16 +3,31 @@ import { createRequire } from "module"
 const require = createRequire(import.meta.url)
 
 export async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
+  if (!buffer || buffer.length < 50) {
+    console.error("PDF buffer vacío o demasiado pequeño para extraer texto")
+    return ""
+  }
+
   try {
     const { extractText } = require("unpdf")
     const result = await extractText(new Uint8Array(buffer), { mergePages: true })
     const text =
       typeof result.text === "string" ? result.text : (result.text as string[]).join("\n")
-    return text.trim()
+    if (text.trim()) return text.trim()
   } catch (error) {
-    console.error("Error extrayendo texto del PDF:", error)
-    return ""
+    console.error("unpdf no pudo extraer texto:", error)
   }
+
+  try {
+    const { PDFParse } = require("pdf-parse")
+    const parser = new PDFParse({ data: buffer })
+    const result = await parser.getText()
+    if (result?.text?.trim()) return result.text.trim()
+  } catch (error) {
+    console.error("pdf-parse no pudo extraer texto:", error)
+  }
+
+  return ""
 }
 
 export type FaqItem = { question: string; answer: string }

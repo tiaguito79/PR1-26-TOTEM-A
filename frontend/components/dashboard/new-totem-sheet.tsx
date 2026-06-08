@@ -47,6 +47,7 @@ import {
   isPresetNameForOtherSede,
   type TotemNamePresetItem,
 } from "@/lib/totem-name-presets"
+import { extractPdfTextFromFile } from "@/lib/pdf-client"
 import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
 import { SEDES } from "@/lib/sedes"
 import { getSessionAdmin, isSuperAdminSession } from "@/lib/session-admin"
@@ -307,12 +308,16 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
 
       let faqPdfPayload = null
       if (faqPdf) {
-        toast.info("Subiendo PDF de FAQ...")
-        const uploadedPdf = await uploadFileToCloudinary(faqPdf, "raw")
+        toast.info("Leyendo y subiendo PDF de FAQ...")
+        const [uploadedPdf, extractedText] = await Promise.all([
+          uploadFileToCloudinary(faqPdf, "raw"),
+          extractPdfTextFromFile(faqPdf),
+        ])
         faqPdfPayload = {
           url: uploadedPdf.url,
           publicId: uploadedPdf.publicId,
           name: faqPdf.name,
+          extractedText,
         }
       }
 

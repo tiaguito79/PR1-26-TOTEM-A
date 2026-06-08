@@ -20,6 +20,7 @@ export type UploadedPdfInput = {
   url: string
   publicId: string
   name: string
+  extractedText?: string
 }
 
 export type FaqProcessResult = {
@@ -94,27 +95,29 @@ export async function processFaqPdfFromCloudinary(
   totemId: mongoose.Types.ObjectId | string,
   totemNombre: string
 ): Promise<FaqProcessResult> {
-  let extractedText = ""
+  let extractedText = pdf.extractedText?.trim() || ""
   let items: Array<{ question: string; answer: string }> = []
   let warning: string | undefined
 
-  try {
-    const pdfBuffer = await fetchCloudinaryPdfBuffer(pdf)
-    extractedText = await extractTextFromPdfBuffer(pdfBuffer)
-
-    if (extractedText) {
-      const parsed = parseTotemKnowledgeDocument(extractedText)
-      items = parsed.items
-    } else {
+  if (!extractedText) {
+    try {
+      const pdfBuffer = await fetchCloudinaryPdfBuffer(pdf)
+      extractedText = await extractTextFromPdfBuffer(pdfBuffer)
+    } catch (error) {
+      console.error("Error descargando PDF desde Cloudinary:", error)
       warning =
-        "El PDF se vinculó al tótem, pero no se pudo extraer texto. Verifica que el PDF tenga texto seleccionable."
+        error instanceof Error
+          ? `El PDF se guardó en Cloudinary, pero falló la descarga en servidor: ${error.message}`
+          : "El PDF se guardó, pero falló la descarga en servidor."
     }
-  } catch (error) {
-    console.error("Error procesando contenido del PDF FAQ:", error)
+  }
+
+  if (extractedText) {
+    const parsed = parseTotemKnowledgeDocument(extractedText)
+    items = parsed.items
+  } else if (!warning) {
     warning =
-      error instanceof Error
-        ? `El PDF se guardó en Cloudinary, pero falló la lectura automática: ${error.message}`
-        : "El PDF se guardó, pero falló la lectura automática del contenido."
+      "El PDF se vinculó al tótem, pero no se pudo extraer texto. Verifica que el PDF tenga texto seleccionable."
   }
 
   const document = await DocumentModel.create({

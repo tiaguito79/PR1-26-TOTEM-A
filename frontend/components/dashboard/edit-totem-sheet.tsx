@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { extractPdfTextFromFile } from "@/lib/pdf-client"
 import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
 import { getSedeIdFromCampus, SEDES } from "@/lib/sedes"
 import { getSessionAdmin, isSuperAdminSession } from "@/lib/session-admin"
@@ -279,12 +280,16 @@ export function EditTotemSheet({
 
         let faqPdfPayload = null
         if (faqPdf) {
-          toast.info("Subiendo PDF de FAQ...")
-          const uploadedPdf = await uploadFileToCloudinary(faqPdf, "raw")
+          toast.info("Leyendo y subiendo PDF de FAQ...")
+          const [uploadedPdf, extractedText] = await Promise.all([
+            uploadFileToCloudinary(faqPdf, "raw"),
+            extractPdfTextFromFile(faqPdf),
+          ])
           faqPdfPayload = {
             url: uploadedPdf.url,
             publicId: uploadedPdf.publicId,
             name: faqPdf.name,
+            extractedText,
           }
         }
 
@@ -315,8 +320,11 @@ export function EditTotemSheet({
         }
         updateResult = await response.json().catch(() => null)
       } else if (faqPdf) {
-        toast.info("Subiendo PDF de FAQ...")
-        const uploadedPdf = await uploadFileToCloudinary(faqPdf, "raw")
+        toast.info("Leyendo y subiendo PDF de FAQ...")
+        const [uploadedPdf, extractedText] = await Promise.all([
+          uploadFileToCloudinary(faqPdf, "raw"),
+          extractPdfTextFromFile(faqPdf),
+        ])
 
         const response = await fetch(`/api/totems/${totem.id}`, {
           method: "PUT",
@@ -333,6 +341,7 @@ export function EditTotemSheet({
               url: uploadedPdf.url,
               publicId: uploadedPdf.publicId,
               name: faqPdf.name,
+              extractedText,
             },
             info_bloques: bloquesValidos.length > 0 ? bloquesValidos : undefined,
           }),

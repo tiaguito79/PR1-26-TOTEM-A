@@ -75,10 +75,7 @@ export async function loadFaqKnowledgeForDisplay(faq: LeanFaq) {
     if (parsed.generalInfo.length > 0) generalInfo = parsed.generalInfo
     if (parsed.rules.length > 0) rules = parsed.rules
 
-    const shouldPersistItems =
-      parsed.items.length > 0 && (faq.items?.length ?? 0) === 0
-
-    if (shouldPersistItems) {
+    if (parsed.items.length > 0 && (faq.items?.length ?? 0) === 0) {
       await Faq.findByIdAndUpdate(faq._id, { items: parsed.items })
     }
   }

@@ -44,6 +44,7 @@ const TotemSchema = new Schema({
     url: { type: String },
     publicId: { type: String },
     name: { type: String },
+    extractedText: { type: String },
   },
 
   fecha_registro: { type: Date, default: Date.now }

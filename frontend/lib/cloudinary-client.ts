@@ -92,6 +92,7 @@ export type UploadedPdfPayload = {
   url: string
   publicId: string
   name: string
+  extractedText?: string
 }
 
 export async function uploadTemplateMedia(

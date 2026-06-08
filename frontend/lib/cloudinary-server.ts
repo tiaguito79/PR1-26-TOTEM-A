@@ -51,7 +51,43 @@ export async function fetchRemoteBuffer(url: string): Promise<Buffer> {
   if (!response.ok) {
     throw new Error(`No se pudo descargar el archivo (${response.status})`)
   }
-  return Buffer.from(await response.arrayBuffer())
+  const buffer = Buffer.from(await response.arrayBuffer())
+  if (buffer.length < 50) {
+    throw new Error("El archivo descargado está vacío o es inválido")
+  }
+  return buffer
+}
+
+function publicIdCandidates(publicId: string): string[] {
+  const trimmed = publicId.trim()
+  if (!trimmed) return []
+
+  const candidates = new Set<string>([trimmed])
+  if (trimmed.endsWith(".pdf")) {
+    candidates.add(trimmed.slice(0, -4))
+  } else {
+    candidates.add(`${trimmed}.pdf`)
+  }
+  return Array.from(candidates)
+}
+
+async function downloadViaSignedUrl(publicId: string, deliveryType = "upload") {
+  getCloudinaryConfig()
+  const signedUrl = cloudinary.url(publicId, {
+    resource_type: "raw",
+    type: deliveryType,
+    secure: true,
+    sign_url: true,
+  })
+  return fetchRemoteBuffer(signedUrl)
+}
+
+async function downloadViaPrivateUrl(publicId: string) {
+  getCloudinaryConfig()
+  const downloadUrl = cloudinary.utils.private_download_url(publicId, "", {
+    resource_type: "raw",
+  })
+  return fetchRemoteBuffer(downloadUrl)
 }
 
 export async function fetchCloudinaryPdfBuffer(pdf: {
@@ -59,37 +95,69 @@ export async function fetchCloudinaryPdfBuffer(pdf: {
   publicId: string
 }): Promise<Buffer> {
   const errors: string[] = []
+  getCloudinaryConfig()
+
+  for (const candidate of publicIdCandidates(pdf.publicId || "")) {
+    try {
+      const resource = await cloudinary.api.resource(candidate, {
+        resource_type: "raw",
+      })
+      const resolvedId = resource.public_id || candidate
+      const deliveryType = resource.type || "upload"
+
+      try {
+        return await downloadViaSignedUrl(resolvedId, deliveryType)
+      } catch (signedError) {
+        errors.push(
+          `signed:${resolvedId}: ${
+            signedError instanceof Error ? signedError.message : String(signedError)
+          }`
+        )
+      }
+
+      try {
+        return await downloadViaPrivateUrl(resolvedId)
+      } catch (privateError) {
+        errors.push(
+          `private:${resolvedId}: ${
+            privateError instanceof Error ? privateError.message : String(privateError)
+          }`
+        )
+      }
+
+      if (resource.secure_url) {
+        try {
+          return await fetchRemoteBuffer(resource.secure_url)
+        } catch (urlError) {
+          errors.push(
+            `secure_url:${resolvedId}: ${
+              urlError instanceof Error ? urlError.message : String(urlError)
+            }`
+          )
+        }
+      }
+    } catch (error) {
+      errors.push(
+        `resource:${candidate}: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  for (const candidate of publicIdCandidates(pdf.publicId || "")) {
+    try {
+      return await downloadViaSignedUrl(candidate)
+    } catch (error) {
+      errors.push(
+        `signed-fallback:${candidate}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      )
+    }
+  }
 
   if (pdf.url) {
     try {
       return await fetchRemoteBuffer(pdf.url)
-    } catch (error) {
-      errors.push(error instanceof Error ? error.message : String(error))
-    }
-  }
-
-  if (pdf.publicId) {
-    try {
-      getCloudinaryConfig()
-      const resource = await cloudinary.api.resource(pdf.publicId, {
-        resource_type: "raw",
-        type: "upload",
-      })
-      if (resource.secure_url) {
-        return await fetchRemoteBuffer(resource.secure_url)
-      }
-    } catch (error) {
-      errors.push(error instanceof Error ? error.message : String(error))
-    }
-
-    try {
-      getCloudinaryConfig()
-      const signedUrl = cloudinary.url(pdf.publicId, {
-        resource_type: "raw",
-        secure: true,
-        type: "upload",
-      })
-      return await fetchRemoteBuffer(signedUrl)
     } catch (error) {
       errors.push(error instanceof Error ? error.message : String(error))
     }

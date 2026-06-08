@@ -1,6 +1,11 @@
 import connectDB from "@/lib/mongodb"
 import { corsJson, corsPreflightResponse } from "@/lib/cors"
-import { getTotemAdsForDisplay, getTotemFaqForDisplay } from "@/lib/totem-display.server"
+import {
+  getTotemAdsForDisplay,
+  getTotemFaqForDisplay,
+  getTotemMediaForDisplay,
+} from "@/lib/totem-display.server"
+import { getTemplateDisplayName, normalizePlantillaId } from "@/lib/totem-templates"
 import { resolveTotemRef } from "@/lib/totem-resolve"
 
 export const runtime = "nodejs"
@@ -21,9 +26,12 @@ export async function GET(_request: Request, { params }: RouteContext) {
       return corsJson({ error: "Tótem no encontrado" }, { status: 404 })
     }
 
-    const [ads, faq] = await Promise.all([
+    const plantillaId = normalizePlantillaId(totem.plantilla)
+
+    const [ads, faq, media] = await Promise.all([
       getTotemAdsForDisplay(totemRef),
       getTotemFaqForDisplay(totemRef),
+      getTotemMediaForDisplay(totemRef),
     ])
 
     return corsJson({
@@ -32,8 +40,14 @@ export async function GET(_request: Request, { params }: RouteContext) {
         totem_id: totem.totem_id,
         nombre: totem.nombre,
         plantilla: totem.plantilla,
+        plantillaId,
+        plantillaNombre: getTemplateDisplayName(plantillaId),
         estado: totem.estado,
         info_bloques: totem.info_bloques ?? [],
+      },
+      media: {
+        images: media.images,
+        videos: media.videos,
       },
       ads,
       faq,

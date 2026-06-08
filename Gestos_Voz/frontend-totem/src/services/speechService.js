@@ -1,6 +1,8 @@
 let recognitionInstance = null;
+let recognitionStopped = false;
 
 export const iniciarReconocimiento = (setEstado, setTexto, setRespuesta, onActivarFaq, getFaqData) => {
+  recognitionStopped = false;
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
@@ -53,12 +55,16 @@ export const iniciarReconocimiento = (setEstado, setTexto, setRespuesta, onActiv
   };
 
   recognition.onend = () => {
+    if (recognitionStopped) return;
     setEstado("esperando");
-    setTimeout(() => iniciar(), 1500);
+    setTimeout(() => {
+      if (!recognitionStopped) iniciar();
+    }, 1500);
   };
 };
 
 export const detenerReconocimiento = () => {
+  recognitionStopped = true;
   if (recognitionInstance) {
     try { recognitionInstance.stop(); recognitionInstance = null; } catch (_) {}
   }

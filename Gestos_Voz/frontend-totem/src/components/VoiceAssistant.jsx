@@ -86,7 +86,7 @@ export default function VoiceAssistant({ onActivarFaq, faqData }) {
           )}
 
           <div className="voice-help">
-            Haz una pregunta en voz alta o abre la mano para ver las preguntas frecuentes.
+            Haz una pregunta en voz alta sobre las consultas disponibles.
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-export default function FaqView({ faq }) {
+export default function FaqView({ faq, totemName }) {
   const items = faq?.items || [];
 
   return (
@@ -6,7 +6,7 @@ export default function FaqView({ faq }) {
       <header className="totem-topbar">
         <div className="topbar-left">
           <div className="totem-logo">T</div>
-          <span className="totem-brand">TOTEM</span>
+          <span className="totem-brand">{totemName || "TOTEM"}</span>
         </div>
 
         <div className="topbar-right">

@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
 
 interface Totem {
   id: string
@@ -130,6 +131,15 @@ export function EditTotemSheet({
 
   const templateChanged = selectedTemplate !== originalTemplate
   const selectedTemplateObj = templates.find((t) => t.id === selectedTemplate)
+  const todayDate = getTodayDateString()
+  const minEndDate = fechaInicioContenido || todayDate
+
+  const handleStartDateChange = (value: string) => {
+    setFechaInicioContenido(value)
+    if (fechaFinContenido && value && fechaFinContenido < value) {
+      setFechaFinContenido("")
+    }
+  }
 
   useEffect(() => {
     if (totem && open) {
@@ -235,8 +245,13 @@ export function EditTotemSheet({
         )
       }
 
-      if (!fechaInicioContenido || !fechaFinContenido) {
-        errs.push("Debes seleccionar el rango de fechas del contenido al cambiar de plantilla.")
+      const dateError = validateTotemContentDates(
+        fechaInicioContenido,
+        fechaFinContenido,
+        todayDate
+      )
+      if (dateError) {
+        errs.push(dateError)
       }
     }
 
@@ -516,7 +531,8 @@ export function EditTotemSheet({
                       <Input
                         type="date"
                         value={fechaInicioContenido}
-                        onChange={(e) => setFechaInicioContenido(e.target.value)}
+                        min={todayDate}
+                        onChange={(e) => handleStartDateChange(e.target.value)}
                         className="pl-10 bg-muted/50 border-border"
                       />
                     </div>
@@ -528,6 +544,7 @@ export function EditTotemSheet({
                       <Input
                         type="date"
                         value={fechaFinContenido}
+                        min={minEndDate}
                         onChange={(e) => setFechaFinContenido(e.target.value)}
                         className="pl-10 bg-muted/50 border-border"
                       />

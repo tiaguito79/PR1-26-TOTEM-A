@@ -47,6 +47,7 @@ import {
   isPresetNameForOtherSede,
   type TotemNamePresetItem,
 } from "@/lib/totem-name-presets"
+import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
 
 const templates = [
   { id: "clasica", name: "Plantilla Clásica", color: "bg-emerald-600", req: { images: 3, videos: 1 } },
@@ -103,6 +104,15 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
 
   const selectedTemplateObj = templates.find((t) => t.id === selectedTemplate)
   const nameSuggestions = buildSuggestedNames(namePresets, existingTotemNames, selectedSede)
+  const todayDate = getTodayDateString()
+  const minEndDate = fechaInicioContenido || todayDate
+
+  const handleStartDateChange = (value: string) => {
+    setFechaInicioContenido(value)
+    if (fechaFinContenido && value && fechaFinContenido < value) {
+      setFechaFinContenido("")
+    }
+  }
 
   const generarCredenciales = () => {
     const randomId = Math.random().toString(36).substring(2, 6).toUpperCase()
@@ -264,8 +274,9 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
       return
     }
 
-    if (!fechaInicioContenido || !fechaFinContenido) {
-      toast.error("Debes seleccionar el rango de fechas del contenido.")
+    const dateError = validateTotemContentDates(fechaInicioContenido, fechaFinContenido, todayDate)
+    if (dateError) {
+      toast.error(dateError)
       return
     }
 
@@ -514,7 +525,8 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
                     <Input
                       type="date"
                       value={fechaInicioContenido}
-                      onChange={(e) => setFechaInicioContenido(e.target.value)}
+                      min={todayDate}
+                      onChange={(e) => handleStartDateChange(e.target.value)}
                       className="pl-10 bg-muted/50 border-border"
                     />
                   </div>
@@ -527,6 +539,7 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
                     <Input
                       type="date"
                       value={fechaFinContenido}
+                      min={minEndDate}
                       onChange={(e) => setFechaFinContenido(e.target.value)}
                       className="pl-10 bg-muted/50 border-border"
                     />

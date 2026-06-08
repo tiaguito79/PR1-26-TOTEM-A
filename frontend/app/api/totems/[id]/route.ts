@@ -16,6 +16,7 @@ import Totem from "@/models/Totem"
 import Content from "@/models/Content"
 import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
+import { validateTotemContentDates } from "@/lib/totem-dates"
 
 export const runtime = "nodejs"
 
@@ -117,6 +118,13 @@ export async function PUT(request: Request, { params }: RouteContext) {
       }
 
       if (!keepContent) {
+        if (mostrarDesde && mostrarHasta) {
+          const dateError = validateTotemContentDates(mostrarDesde, mostrarHasta)
+          if (dateError) {
+            return NextResponse.json({ error: dateError }, { status: 400 })
+          }
+        }
+
         const oldArchivos = totem.contenido?.archivos ?? []
         for (const archivo of oldArchivos) {
           if (!archivo.contentId) continue
@@ -224,6 +232,13 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const archivos = Array.isArray(body.archivos) ? (body.archivos as UploadedArchivoInput[]) : []
 
     if (replaceContent && archivos.length > 0) {
+      if (body.mostrarDesde && body.mostrarHasta) {
+        const dateError = validateTotemContentDates(body.mostrarDesde, body.mostrarHasta)
+        if (dateError) {
+          return NextResponse.json({ error: dateError }, { status: 400 })
+        }
+      }
+
       await applyCloudinaryContentUpdate(
         totem,
         update,

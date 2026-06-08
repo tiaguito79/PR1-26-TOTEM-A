@@ -15,6 +15,7 @@ import Totem from "@/models/Totem"
 import Content from "@/models/Content"
 import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
+import { validateTotemContentDates } from "@/lib/totem-dates"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -141,6 +142,13 @@ export async function POST(request: Request) {
         )
       }
 
+      if (body.mostrarDesde && body.mostrarHasta) {
+        const dateError = validateTotemContentDates(body.mostrarDesde, body.mostrarHasta)
+        if (dateError) {
+          return NextResponse.json({ error: dateError }, { status: 400 })
+        }
+      }
+
       const newTotem = await createTotemFromCloudinary(body)
       return NextResponse.json(newTotem, { status: 201 })
     }
@@ -156,6 +164,13 @@ export async function POST(request: Request) {
     const contraseña = formData.get("contraseña") as string
     const mostrarDesde = formData.get("mostrarDesde") as string
     const mostrarHasta = formData.get("mostrarHasta") as string
+
+    if (mostrarDesde && mostrarHasta) {
+      const dateError = validateTotemContentDates(mostrarDesde, mostrarHasta)
+      if (dateError) {
+        return NextResponse.json({ error: dateError }, { status: 400 })
+      }
+    }
 
     const archivosConfig = [
       { key: "imagen1", slot: "Imagen Carrusel 1", tipo: "imagen" },

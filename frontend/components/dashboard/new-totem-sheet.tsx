@@ -405,8 +405,9 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="relative w-full sm:max-w-md md:max-w-lg bg-card border-border p-0 flex flex-col h-full overflow-hidden"
+        className="w-full sm:max-w-md md:max-w-lg bg-card border-border p-0 flex flex-col h-full overflow-hidden"
       >
+        <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
         <SheetUploadOverlay visible={isSubmitting} message={uploadMessage} />
         <SheetHeader className="p-6 pb-4 border-b border-border">
           <div className="flex items-center gap-3">
@@ -947,6 +948,7 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
             {isSubmitting ? "Creando..." : "Crear Tótem"}
           </Button>
         </SheetFooter>
+        </div>
       </SheetContent>
     </Sheet>
     </>

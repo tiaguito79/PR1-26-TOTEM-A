@@ -1,3 +1,4 @@
+import mongoose from "mongoose"
 import Ad from "@/models/Ad"
 import Content from "@/models/Content"
 import Faq from "@/models/Faq"
@@ -8,11 +9,45 @@ import {
   normalizePlantillaId,
 } from "@/lib/totem-templates"
 
-type PopulatedContent = {
+type TotemArchivo = {
+  slot?: string
+  tipo?: string
+  contentId?: mongoose.Types.ObjectId | string
+}
+
+type ContentRecord = {
   url_contenido?: string
   tipo?: string
   nombre?: string
   descripcion?: string
+}
+
+async function getTotemArchivosWithContent(totemId: mongoose.Types.ObjectId) {
+  const totem = await Totem.findById(totemId).lean()
+  const archivos = (totem?.contenido?.archivos ?? []) as TotemArchivo[]
+
+  const contentIds = archivos
+    .map((archivo) => archivo.contentId)
+    .filter((id): id is mongoose.Types.ObjectId | string => Boolean(id))
+
+  if (contentIds.length === 0) {
+    return { archivos, contentById: new Map<string, ContentRecord>() }
+  }
+
+  const contents = await Content.find({ _id: { $in: contentIds } }).lean()
+  const contentById = new Map<string, ContentRecord>(
+    contents.map((content) => [content._id.toString(), content as ContentRecord])
+  )
+
+  return { archivos, contentById }
+}
+
+function getContentForArchivo(
+  archivo: TotemArchivo,
+  contentById: Map<string, ContentRecord>
+) {
+  const id = archivo.contentId?.toString()
+  return id ? contentById.get(id) ?? null : null
 }
 
 export async function getTotemAdsForDisplay(totemRef: string) {
@@ -37,14 +72,11 @@ export async function getTotemAdsForDisplay(totemRef: string) {
     }))
   }
 
-  const populated = await Totem.findById(totem._id).populate<{
-    contenido: { archivos: Array<{ slot: string; tipo: string; contentId: PopulatedContent }> }
-  }>("contenido.archivos.contentId")
+  const { archivos, contentById } = await getTotemArchivosWithContent(totem._id)
 
-  const archivos = populated?.contenido?.archivos ?? []
   return archivos
     .map((archivo) => {
-      const content = archivo.contentId as PopulatedContent | null
+      const content = getContentForArchivo(archivo, contentById)
       const mediaUrl = content?.url_contenido
       if (!mediaUrl) return null
       return {
@@ -86,14 +118,10 @@ export async function getTotemMediaForDisplay(totemRef: string) {
   const images: Array<string | null> = Array.from({ length: imageCount }, () => null)
   const videos: Array<string | null> = Array.from({ length: videoCount }, () => null)
 
-  const populated = await Totem.findById(totem._id).populate<{
-    contenido: { archivos: Array<{ slot: string; tipo: string; contentId: PopulatedContent }> }
-  }>("contenido.archivos.contentId")
-
-  const archivos = populated?.contenido?.archivos ?? []
+  const { archivos, contentById } = await getTotemArchivosWithContent(totem._id)
 
   for (const archivo of archivos) {
-    const content = archivo.contentId as PopulatedContent | null
+    const content = getContentForArchivo(archivo, contentById)
     const mediaUrl = content?.url_contenido
     if (!mediaUrl) continue
 

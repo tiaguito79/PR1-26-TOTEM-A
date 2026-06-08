@@ -2,7 +2,12 @@ import { NextResponse } from "next/server"
 import mongoose from "mongoose"
 import { GridFSBucket } from "mongodb"
 import connectDB from "@/lib/mongodb"
-import { AuthError, requireAuth } from "@/lib/auth.server"
+import {
+  assertCanAccessSede,
+  AuthError,
+  getTotemQueryFilter,
+  requireAuth,
+} from "@/lib/auth.server"
 import { subirPdfAGridFS } from "@/lib/gridfs"
 import { extractTextFromPdfBuffer, parseFaqText } from "@/lib/pdf-service"
 import {
@@ -107,10 +112,10 @@ async function createTotemFromCloudinary(body: {
 
 export async function GET(request: Request) {
   try {
-    await requireAuth(request)
+    const auth = await requireAuth(request)
     await connectDB()
 
-    const totems = await Totem.find({})
+    const totems = await Totem.find(getTotemQueryFilter(auth))
       .populate("contenido.archivos.contentId")
       .sort({ createdAt: -1 })
 
@@ -129,7 +134,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await requireAuth(request)
+    const auth = await requireAuth(request)
     await connectDB()
 
     if (isJsonRequest(request)) {
@@ -141,6 +146,8 @@ export async function POST(request: Request) {
           { status: 400 }
         )
       }
+
+      assertCanAccessSede(auth, body.campus_id)
 
       if (body.mostrarDesde && body.mostrarHasta) {
         const dateError = validateTotemContentDates(body.mostrarDesde, body.mostrarHasta)
@@ -164,6 +171,10 @@ export async function POST(request: Request) {
     const contraseña = formData.get("contraseña") as string
     const mostrarDesde = formData.get("mostrarDesde") as string
     const mostrarHasta = formData.get("mostrarHasta") as string
+
+    if (campus_id) {
+      assertCanAccessSede(auth, campus_id)
+    }
 
     if (mostrarDesde && mostrarHasta) {
       const dateError = validateTotemContentDates(mostrarDesde, mostrarHasta)

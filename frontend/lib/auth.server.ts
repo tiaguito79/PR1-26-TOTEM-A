@@ -1,11 +1,13 @@
 import { cookies } from "next/headers"
 import jwt from "jsonwebtoken"
 import { AUTH_COOKIE_NAME } from "@/lib/auth.constants"
+import { buildTotemSedeFilter, sedeMatchesCampusId } from "@/lib/sedes"
 
 export type AuthAdmin = {
   adminId: string
   admin_id: string
-  rol: string
+  rol: "admin" | "superadmin"
+  sedeId?: string | null
 }
 
 export class AuthError extends Error {
@@ -53,6 +55,38 @@ export async function requireAuth(request: Request): Promise<AuthAdmin> {
     throw new AuthError("No autorizado")
   }
   return verifyToken(token)
+}
+
+export function isSuperAdmin(admin: AuthAdmin): boolean {
+  return admin.rol === "superadmin"
+}
+
+export function requireSuperAdmin(admin: AuthAdmin) {
+  if (!isSuperAdmin(admin)) {
+    throw new AuthError("No tienes permisos de super administrador", 403)
+  }
+}
+
+export function assertCanAccessSede(admin: AuthAdmin, campusOrSedeId: string) {
+  if (isSuperAdmin(admin)) return
+  if (!admin.sedeId || !sedeMatchesCampusId(admin.sedeId, campusOrSedeId)) {
+    throw new AuthError("No tienes acceso a esta sede", 403)
+  }
+}
+
+export function assertCanAccessTotem(admin: AuthAdmin, campusId: string) {
+  if (isSuperAdmin(admin)) return
+  if (!admin.sedeId || !sedeMatchesCampusId(admin.sedeId, campusId)) {
+    throw new AuthError("No tienes acceso a este tótem", 403)
+  }
+}
+
+export function getTotemQueryFilter(admin: AuthAdmin): Record<string, unknown> {
+  if (isSuperAdmin(admin)) return {}
+  if (!admin.sedeId) {
+    throw new AuthError("Tu cuenta no tiene una sede asignada", 403)
+  }
+  return buildTotemSedeFilter(admin.sedeId)
 }
 
 export function authCookieOptions(maxAgeSeconds = 2 * 60 * 60) {

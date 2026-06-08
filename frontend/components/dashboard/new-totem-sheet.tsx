@@ -48,6 +48,8 @@ import {
   type TotemNamePresetItem,
 } from "@/lib/totem-name-presets"
 import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
+import { SEDES } from "@/lib/sedes"
+import { getSessionAdmin, isSuperAdminSession } from "@/lib/session-admin"
 
 const templates = [
   { id: "clasica", name: "Plantilla Clásica", color: "bg-emerald-600", req: { images: 3, videos: 1 } },
@@ -56,12 +58,6 @@ const templates = [
   { id: "minimal", name: "Plantilla Minimal", color: "bg-teal-600", req: { images: 4, videos: 0 } },
   { id: "corporativa", name: "Plantilla Corporativa", color: "bg-blue-600", req: { images: 3, videos: 2 } },
   { id: "directorio", name: "Plantilla Directorio", color: "bg-pink-600", req: { images: 0, videos: 1 } },
-]
-
-const sedes = [
-  { id: "cochabamba", name: "Cochabamba" },
-  { id: "santa-cruz", name: "Santa Cruz" },
-  { id: "la-paz", name: "La Paz" },
 ]
 
 type Estado = "Activo" | "Inactivo" | "En Mantenimiento"
@@ -106,6 +102,9 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
   const nameSuggestions = buildSuggestedNames(namePresets, existingTotemNames, selectedSede)
   const todayDate = getTodayDateString()
   const minEndDate = fechaInicioContenido || todayDate
+  const sessionAdmin = getSessionAdmin()
+  const isSuperAdmin = isSuperAdminSession(sessionAdmin)
+  const lockedSedeId = !isSuperAdmin ? sessionAdmin?.sedeId || "" : ""
 
   const handleStartDateChange = (value: string) => {
     setFechaInicioContenido(value)
@@ -196,7 +195,7 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
     if (open) {
       setCredentials(generarCredenciales())
       setNombre("")
-      setSelectedSede("")
+      setSelectedSede(lockedSedeId || "")
       setSelectedTemplate(null)
       setSelectedEstado("Activo")
       setFechaInicioContenido("")
@@ -414,18 +413,27 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Sede *
               </Label>
-              <Select value={selectedSede} onValueChange={setSelectedSede}>
+              <Select
+                value={selectedSede}
+                onValueChange={setSelectedSede}
+                disabled={!isSuperAdmin && !!lockedSedeId}
+              >
                 <SelectTrigger className="w-full bg-muted/50 border-border">
                   <SelectValue placeholder="Selecciona una sede..." />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
-                  {sedes.map((sede) => (
+                  {SEDES.map((sede) => (
                     <SelectItem key={sede.id} value={sede.id}>
                       {sede.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {!isSuperAdmin && lockedSedeId && (
+                <p className="text-xs text-muted-foreground">
+                  Solo puedes crear tótems para tu sede asignada.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -441,7 +449,7 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
               {selectedSede ? (
                 <TotemNamePresetsPanel
                   sedeId={selectedSede}
-                  sedeName={sedes.find((s) => s.id === selectedSede)?.name || ""}
+                  sedeName={SEDES.find((s) => s.id === selectedSede)?.name || ""}
                   presets={namePresets}
                   suggestions={nameSuggestions}
                   selectedName={nombre}

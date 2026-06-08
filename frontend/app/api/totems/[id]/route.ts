@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import mongoose from "mongoose"
 import { GridFSBucket } from "mongodb"
 import connectDB from "@/lib/mongodb"
-import { AuthError, requireAuth } from "@/lib/auth.server"
+import { assertCanAccessSede, assertCanAccessTotem, AuthError, requireAuth } from "@/lib/auth.server"
 import { eliminarArchivoGridFS, subirPdfAGridFS } from "@/lib/gridfs"
 import { extractTextFromPdfBuffer, parseFaqText } from "@/lib/pdf-service"
 import {
@@ -69,7 +69,7 @@ async function applyCloudinaryContentUpdate(
 
 export async function PUT(request: Request, { params }: RouteContext) {
   try {
-    await requireAuth(request)
+    const auth = await requireAuth(request)
     await connectDB()
     const { id } = await params
 
@@ -81,6 +81,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
     if (!totem) {
       return NextResponse.json({ error: "Tótem no encontrado" }, { status: 404 })
     }
+
+    assertCanAccessTotem(auth, totem.campus_id)
 
     if (isFormData(request)) {
       const formData = await request.formData()
@@ -216,6 +218,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
       update.nombre = body.nombre.trim()
     }
     if (typeof body.campus_id === "string" && body.campus_id.trim()) {
+      assertCanAccessSede(auth, body.campus_id.trim())
       update.campus_id = body.campus_id.trim()
     }
     if (typeof body.plantilla === "string" && body.plantilla.trim()) {
@@ -290,7 +293,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
 export async function DELETE(request: Request, { params }: RouteContext) {
   try {
-    await requireAuth(request)
+    const auth = await requireAuth(request)
     await connectDB()
     const { id } = await params
 
@@ -302,6 +305,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     if (!totem) {
       return NextResponse.json({ error: "Tótem no encontrado" }, { status: 404 })
     }
+
+    assertCanAccessTotem(auth, totem.campus_id)
 
     const archivos = totem.contenido?.archivos ?? []
     await deleteTotemContents(archivos)

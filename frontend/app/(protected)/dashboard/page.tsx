@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Header } from "@/components/dashboard/header"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { TotemsTable } from "@/components/dashboard/totems-table"
+import { getSedeIdFromCampus, getSedeName } from "@/lib/sedes"
 
 interface Totem {
   id: string
@@ -59,7 +60,7 @@ export default function DashboardPage() {
         id: item._id,
         nombre: item.nombre,
         tiempoTranscurrido: "Sincronizado",
-        sede: item.campus_id || item.sede || "Sin sede",
+        sede: getSedeName(getSedeIdFromCampus(item.campus_id || item.sede || "")),
         plantilla: item.plantilla || "Sin plantilla",
         estado: item.estado,
         contenido: item.contenido_count ?? item.contenido?.archivos?.length ?? 0,

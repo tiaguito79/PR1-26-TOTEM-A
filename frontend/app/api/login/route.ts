@@ -5,6 +5,7 @@ import connectDB from "@/lib/mongodb"
 import Admin from "@/models/Admin"
 import { AUTH_COOKIE_NAME } from "@/lib/auth.constants"
 import { authCookieOptions } from "@/lib/auth.server"
+import { getSedeName } from "@/lib/sedes"
 
 export const runtime = "nodejs"
 
@@ -111,6 +112,7 @@ export async function POST(request: Request) {
         adminId: admin._id,
         admin_id: admin.admin_id,
         rol: admin.rol,
+        sedeId: admin.sedeId || null,
       },
       jwtSecret,
       { expiresIn: process.env.JWT_EXPIRES_IN || "2h" }
@@ -130,6 +132,8 @@ export async function POST(request: Request) {
         nombre: admin.nombre,
         correo: admin.correo_electronico,
         rol: admin.rol,
+        sedeId: admin.sedeId || null,
+        sedeName: admin.sedeId ? getSedeName(admin.sedeId) : null,
       },
     })
 

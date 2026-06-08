@@ -35,6 +35,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
+import { getSedeIdFromCampus, SEDES } from "@/lib/sedes"
+import { getSessionAdmin, isSuperAdminSession } from "@/lib/session-admin"
 
 interface Totem {
   id: string
@@ -63,12 +65,6 @@ const templates = [
   { id: "directorio", name: "Plantilla Directorio", color: "bg-pink-600", req: { images: 0, videos: 1 } },
 ]
 
-const sedes = [
-  { id: "cochabamba", name: "Cochabamba" },
-  { id: "santa-cruz", name: "Santa Cruz" },
-  { id: "la-paz", name: "La Paz" },
-]
-
 type Estado = "Activo" | "Inactivo" | "En Mantenimiento"
 
 function getTemplateIdFromName(plantilla: string): string {
@@ -83,23 +79,9 @@ function getTemplateIdFromName(plantilla: string): string {
   return mapping[plantilla] || plantilla
 }
 
-function getSedeIdFromName(sede: string): string {
-  const mapping: Record<string, string> = {
-    Cochabamba: "cochabamba",
-    "Santa Cruz": "santa-cruz",
-    "La Paz": "la-paz",
-  }
-  return mapping[sede] || sede
-}
-
 function getTemplateNameFromId(id: string): string {
   const template = templates.find((t) => t.id === id)
   return template ? template.name : "Plantilla Clásica"
-}
-
-function getSedeNameFromId(id: string): string {
-  const sede = sedes.find((s) => s.id === id)
-  return sede ? sede.name : "Cochabamba"
 }
 
 export function EditTotemSheet({
@@ -133,6 +115,9 @@ export function EditTotemSheet({
   const selectedTemplateObj = templates.find((t) => t.id === selectedTemplate)
   const todayDate = getTodayDateString()
   const minEndDate = fechaInicioContenido || todayDate
+  const sessionAdmin = getSessionAdmin()
+  const isSuperAdmin = isSuperAdminSession(sessionAdmin)
+  const lockedSedeId = !isSuperAdmin ? sessionAdmin?.sedeId || "" : ""
 
   const handleStartDateChange = (value: string) => {
     setFechaInicioContenido(value)
@@ -144,7 +129,7 @@ export function EditTotemSheet({
   useEffect(() => {
     if (totem && open) {
       setNombre(totem.nombre)
-      setSelectedSede(getSedeIdFromName(totem.sede))
+      setSelectedSede(getSedeIdFromCampus(totem.sede))
       const tplId = getTemplateIdFromName(totem.plantilla)
       setSelectedTemplate(tplId)
       setOriginalTemplate(tplId)
@@ -305,7 +290,7 @@ export function EditTotemSheet({
           },
           body: JSON.stringify({
             nombre: nombre.trim(),
-            campus_id: getSedeNameFromId(selectedSede),
+            campus_id: selectedSede,
             plantilla: getTemplateNameFromId(selectedTemplate),
             estado: selectedEstado,
             mostrarDesde: fechaInicioContenido,
@@ -334,7 +319,7 @@ export function EditTotemSheet({
           },
           body: JSON.stringify({
             nombre: nombre.trim(),
-            campus_id: getSedeNameFromId(selectedSede),
+            campus_id: selectedSede,
             plantilla: getTemplateNameFromId(selectedTemplate),
             estado: selectedEstado,
             faqPdf: {
@@ -360,7 +345,7 @@ export function EditTotemSheet({
           },
           body: JSON.stringify({
             nombre: nombre.trim(),
-            campus_id: getSedeNameFromId(selectedSede),
+            campus_id: selectedSede,
             plantilla: getTemplateNameFromId(selectedTemplate),
             estado: selectedEstado,
             info_bloques: bloquesValidos.length > 0 ? bloquesValidos : undefined,
@@ -443,12 +428,16 @@ export function EditTotemSheet({
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Sede *
               </Label>
-              <Select value={selectedSede} onValueChange={setSelectedSede}>
+              <Select
+                value={selectedSede}
+                onValueChange={setSelectedSede}
+                disabled={!isSuperAdmin && !!lockedSedeId}
+              >
                 <SelectTrigger className="w-full bg-muted/50 border-border">
                   <SelectValue placeholder="Selecciona una sede..." />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
-                  {sedes.map((sede) => (
+                  {SEDES.map((sede) => (
                     <SelectItem key={sede.id} value={sede.id}>
                       {sede.name}
                     </SelectItem>

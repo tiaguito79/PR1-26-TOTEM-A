@@ -29,6 +29,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { NewTotemSheet } from "./new-totem-sheet"
 import { EditTotemSheet } from "./edit-totem-sheet"
 import { CredentialsDialog } from "./credentials-dialog"
+import { getSessionAdmin, isSuperAdminSession } from "@/lib/session-admin"
+import { getSedeName } from "@/lib/sedes"
 
 export interface Totem {
   id: string
@@ -97,6 +99,10 @@ export function TotemsTable({
     username: "",
     password: "",
   })
+
+  const sessionAdmin = getSessionAdmin()
+  const isSuperAdmin = isSuperAdminSession(sessionAdmin)
+  const adminSedeName = sessionAdmin?.sedeName || (sessionAdmin?.sedeId ? getSedeName(sessionAdmin.sedeId) : "")
 
   const [searchQuery, setSearchQuery] = useState("")
   const [filterEstado, setFilterEstado] = useState("todos")
@@ -232,19 +238,27 @@ export function TotemsTable({
             </SelectContent>
           </Select>
 
-          <Select value={filterSede} onValueChange={setFilterSede}>
-            <SelectTrigger className="w-[180px] h-9 bg-background">
-              <SelectValue placeholder="Sede" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas las sedes</SelectItem>
-              {sedes.map((sede) => (
-                <SelectItem key={sede} value={sede}>
-                  {sede}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isSuperAdmin ? (
+            <Select value={filterSede} onValueChange={setFilterSede}>
+              <SelectTrigger className="w-[180px] h-9 bg-background">
+                <SelectValue placeholder="Sede" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las sedes</SelectItem>
+                {sedes.map((sede) => (
+                  <SelectItem key={sede} value={sede}>
+                    {sede}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            adminSedeName && (
+              <Badge variant="secondary" className="h-9 px-3 bg-muted text-muted-foreground">
+                Sede: {adminSedeName}
+              </Badge>
+            )
+          )}
 
           {activeFilters > 0 && (
             <Button

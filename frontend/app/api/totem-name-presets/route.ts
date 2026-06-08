@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
-import { AuthError, requireAuth } from "@/lib/auth.server"
+import { assertCanAccessSede, AuthError, isSuperAdmin, requireAuth } from "@/lib/auth.server"
 import { DEFAULT_TOTEM_NAME_PRESETS, normalizeTotemPrefix } from "@/lib/totem-name-presets-defaults"
 import TotemNamePresetModel from "@/models/TotemNamePreset"
 
@@ -21,12 +21,17 @@ async function ensureDefaultPresets() {
 
 export async function GET(request: Request) {
   try {
-    await requireAuth(request)
+    const auth = await requireAuth(request)
     await connectDB()
     await ensureDefaultPresets()
 
     const { searchParams } = new URL(request.url)
-    const sedeId = searchParams.get("sede")?.trim()
+    const sedeParam = searchParams.get("sede")?.trim()
+    const sedeId = isSuperAdmin(auth) ? sedeParam : auth.sedeId
+
+    if (!isSuperAdmin(auth) && !sedeId) {
+      return NextResponse.json({ error: "Tu cuenta no tiene sede asignada" }, { status: 403 })
+    }
 
     const filter = sedeId ? { sedeId } : {}
     const presets = await TotemNamePresetModel.find(filter).sort({ label: 1 })
@@ -50,13 +55,19 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await requireAuth(request)
+    const auth = await requireAuth(request)
     await connectDB()
 
     const body = await request.json()
     const label = typeof body.label === "string" ? body.label.trim() : ""
     const prefix = normalizeTotemPrefix(typeof body.prefix === "string" ? body.prefix : "")
-    const sedeId = typeof body.sedeId === "string" ? body.sedeId.trim() : ""
+    const sedeId = (
+      isSuperAdmin(auth)
+        ? typeof body.sedeId === "string"
+          ? body.sedeId.trim()
+          : ""
+        : auth.sedeId || ""
+    ) as string
 
     if (!label || !prefix || !sedeId) {
       return NextResponse.json(
@@ -68,6 +79,8 @@ export async function POST(request: Request) {
     if (!["cochabamba", "santa-cruz", "la-paz"].includes(sedeId)) {
       return NextResponse.json({ error: "Sede inválida." }, { status: 400 })
     }
+
+    assertCanAccessSede(auth, sedeId)
 
     const created = await TotemNamePresetModel.create({ label, prefix, sedeId })
 

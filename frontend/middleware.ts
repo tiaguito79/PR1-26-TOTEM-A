@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server"
 import { jwtVerify } from "jose"
 import { AUTH_COOKIE_NAME } from "@/lib/auth.constants"
 
-const PROTECTED_PAGE_PREFIXES = ["/dashboard", "/editor-plantillas"]
+const PROTECTED_PAGE_PREFIXES = ["/dashboard", "/editor-plantillas", "/administradores"]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -35,5 +35,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/editor-plantillas/:path*"],
+  matcher: ["/dashboard/:path*", "/editor-plantillas/:path*", "/administradores/:path*"],
 }

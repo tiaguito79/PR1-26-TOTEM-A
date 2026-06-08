@@ -11,7 +11,9 @@ import {
   Sun,
   Moon,
   User,
+  Shield,
 } from "lucide-react"
+import { getSessionAdmin, isSuperAdminSession } from "@/lib/session-admin"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -21,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const navItems = [
+const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/editor-plantillas", label: "Plantillas", icon: Palette },
 ]
@@ -31,16 +33,27 @@ export function Header() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [adminName, setAdminName] = useState("")
+  const [adminSubtitle, setAdminSubtitle] = useState("")
+  const [navItems, setNavItems] = useState(baseNavItems)
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("admin")
-      if (raw) {
-        const admin = JSON.parse(raw)
-        setAdminName(admin.nombre || admin.usuario || "Admin")
+    const admin = getSessionAdmin()
+    if (admin) {
+      setAdminName(admin.nombre || "Admin")
+      if (isSuperAdminSession(admin)) {
+        setAdminSubtitle("Super administrador")
+        setNavItems([
+          ...baseNavItems,
+          { href: "/administradores", label: "Admins", icon: Shield },
+        ])
+      } else {
+        setAdminSubtitle(admin.sedeName ? `Sede ${admin.sedeName}` : "Administrador de sede")
+        setNavItems(baseNavItems)
       }
-    } catch {
+    } else {
       setAdminName("Admin")
+      setAdminSubtitle("")
+      setNavItems(baseNavItems)
     }
   }, [])
 
@@ -116,8 +129,11 @@ export function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <div className="px-2 py-1.5 text-sm text-muted-foreground">
-              {adminName}
+            <div className="px-2 py-1.5">
+              <p className="text-sm text-foreground">{adminName}</p>
+              {adminSubtitle && (
+                <p className="text-xs text-muted-foreground">{adminSubtitle}</p>
+              )}
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem

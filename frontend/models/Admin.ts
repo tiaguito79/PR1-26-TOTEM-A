@@ -13,6 +13,11 @@ const AdminSchema = new Schema(
     },
     contraseña: { type: String, required: true },
     rol: { type: String, enum: ["admin", "superadmin"], default: "admin" },
+    sedeId: {
+      type: String,
+      enum: ["cochabamba", "santa-cruz", "la-paz", null],
+      default: null,
+    },
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
     failedLoginAttempts: { type: Number, default: 0 },

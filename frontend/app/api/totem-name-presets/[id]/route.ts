@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import mongoose from "mongoose"
 import connectDB from "@/lib/mongodb"
-import { AuthError, requireAuth } from "@/lib/auth.server"
+import { assertCanAccessSede, AuthError, requireAuth } from "@/lib/auth.server"
 import { normalizeTotemPrefix } from "@/lib/totem-name-presets-defaults"
 import TotemNamePresetModel from "@/models/TotemNamePreset"
 
@@ -11,13 +11,19 @@ type RouteContext = { params: Promise<{ id: string }> }
 
 export async function PUT(request: Request, { params }: RouteContext) {
   try {
-    await requireAuth(request)
+    const auth = await requireAuth(request)
     await connectDB()
     const { id } = await params
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
+
+    const existing = await TotemNamePresetModel.findById(id)
+    if (!existing) {
+      return NextResponse.json({ error: "Plantilla no encontrada" }, { status: 404 })
+    }
+    assertCanAccessSede(auth, existing.sedeId)
 
     const body = await request.json()
     const update: Record<string, string> = {}
@@ -70,13 +76,19 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   try {
-    await requireAuth(_request)
+    const auth = await requireAuth(_request)
     await connectDB()
     const { id } = await params
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
+
+    const existing = await TotemNamePresetModel.findById(id)
+    if (!existing) {
+      return NextResponse.json({ error: "Plantilla no encontrada" }, { status: 404 })
+    }
+    assertCanAccessSede(auth, existing.sedeId)
 
     const deleted = await TotemNamePresetModel.findByIdAndDelete(id)
     if (!deleted) {

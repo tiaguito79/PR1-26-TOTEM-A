@@ -647,7 +647,10 @@ export function EditTotemSheet({
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground">
-                Sube un nuevo PDF para actualizar o generar las FAQs del tótem. Formato: <span className="text-cyan-400 font-mono">PREGUNTA: ... RESPUESTA: ...</span>
+                Sube el PDF con formato Documento de Conocimiento: secciones{" "}
+                <span className="text-cyan-400 font-mono">INFORMACIÓN GENERAL</span>,{" "}
+                <span className="text-cyan-400 font-mono">PREGUNTAS FRECUENTES</span> y{" "}
+                <span className="text-cyan-400 font-mono">REGLAS</span>.
               </p>
               <div className="relative">
                 {faqPdf ? (

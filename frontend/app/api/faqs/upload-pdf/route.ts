@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import { subirPdfAGridFS } from "@/lib/gridfs"
-import { extractTextFromPdfBuffer, parseFaqText } from "@/lib/pdf-service"
+import { extractTextFromPdfBuffer, parseTotemKnowledgeDocument } from "@/lib/pdf-service"
 import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const pdfFileId = await subirPdfAGridFS(buffer, fileName, file.type)
 
     const extractedText = await extractTextFromPdfBuffer(buffer)
-    const items = parseFaqText(extractedText)
+    const { items } = parseTotemKnowledgeDocument(extractedText)
 
     if (!items.length) {
       return NextResponse.json(

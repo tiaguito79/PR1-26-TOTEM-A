@@ -4,7 +4,10 @@ import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
 import { deleteCloudinaryAsset, fetchRemoteBuffer } from "@/lib/cloudinary-server"
 import { eliminarArchivoGridFS } from "@/lib/gridfs"
-import { extractTextFromPdfBuffer, parseFaqText } from "@/lib/pdf-service"
+import {
+  extractTextFromPdfBuffer,
+  parseTotemKnowledgeDocument,
+} from "@/lib/pdf-service"
 
 export type UploadedArchivoInput = {
   slot: string
@@ -85,7 +88,7 @@ export async function processFaqPdfFromCloudinary(
 ) {
   const pdfBuffer = await fetchRemoteBuffer(pdf.url)
   const extractedText = await extractTextFromPdfBuffer(pdfBuffer)
-  const items = parseFaqText(extractedText)
+  const { items } = parseTotemKnowledgeDocument(extractedText)
 
   const document = await DocumentModel.create({
     name: pdf.name,

@@ -4,7 +4,7 @@ import { GridFSBucket } from "mongodb"
 import connectDB from "@/lib/mongodb"
 import { assertCanAccessSede, assertCanAccessTotem, AuthError, requireAuth } from "@/lib/auth.server"
 import { eliminarArchivoGridFS, subirPdfAGridFS } from "@/lib/gridfs"
-import { extractTextFromPdfBuffer, parseFaqText } from "@/lib/pdf-service"
+import { extractTextFromPdfBuffer, parseTotemKnowledgeDocument } from "@/lib/pdf-service"
 import {
   createContentsFromCloudinary,
   deleteTotemContents,
@@ -184,7 +184,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
           const pdfFileId = await subirPdfAGridFS(pdfBuffer, pdfFileName, pdfFile.type)
           const extractedText = await extractTextFromPdfBuffer(pdfBuffer)
-          const items = parseFaqText(extractedText)
+          const { items } = parseTotemKnowledgeDocument(extractedText)
 
           const document = await DocumentModel.create({
             name: pdfFile.name,

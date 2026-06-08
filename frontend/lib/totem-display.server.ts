@@ -4,7 +4,10 @@ import Content from "@/models/Content"
 import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
 import Totem from "@/models/Totem"
-import { buildFaqSearchParagraphs, parseFaqText } from "@/lib/pdf-service"
+import {
+  buildFaqSearchParagraphs,
+  parseTotemKnowledgeDocument,
+} from "@/lib/pdf-service"
 import { resolveTotemRef } from "@/lib/totem-resolve"
 import {
   getTemplateMediaRequirements,
@@ -160,6 +163,8 @@ export async function getTotemFaqForDisplay(totemRef: string) {
     return {
       hasFaq: false,
       items: [],
+      generalInfo: [],
+      rules: [],
       paragraphs: [],
       title: "Preguntas Frecuentes",
       pdfUrl: null,
@@ -178,6 +183,8 @@ export async function getTotemFaqForDisplay(totemRef: string) {
     return {
       hasFaq: false,
       items: [],
+      generalInfo: [],
+      rules: [],
       paragraphs: [],
       title: "Preguntas Frecuentes",
       pdfUrl: null,
@@ -189,6 +196,8 @@ export async function getTotemFaqForDisplay(totemRef: string) {
   let pdfUrl = faq.pdfUrl || null
   let pdfName: string | null = null
   let items = (faq.items ?? []) as Array<{ question: string; answer: string }>
+  let generalInfo: Array<{ label: string; value: string }> = []
+  let rules: string[] = []
 
   if (faq.documentId) {
     const document = await DocumentModel.findById(faq.documentId)
@@ -203,8 +212,11 @@ export async function getTotemFaqForDisplay(totemRef: string) {
         (document.fileId ? `/api/contents/file/${document.fileId}` : null)
       pdfName = document.name || null
 
-      if (items.length === 0 && extractedText) {
-        items = parseFaqText(extractedText)
+      if (extractedText) {
+        const parsed = parseTotemKnowledgeDocument(extractedText)
+        if (parsed.items.length > 0) items = parsed.items
+        generalInfo = parsed.generalInfo
+        rules = parsed.rules
       }
     }
   }
@@ -213,12 +225,18 @@ export async function getTotemFaqForDisplay(totemRef: string) {
     pdfUrl = `/api/contents/file/${faq.pdfFileId}`
   }
 
-  const paragraphs = buildFaqSearchParagraphs(extractedText, items)
+  const paragraphs = buildFaqSearchParagraphs(extractedText, items, generalInfo, rules)
 
   return {
-    hasFaq: items.length > 0 || paragraphs.length > 0 || Boolean(pdfUrl),
+    hasFaq:
+      items.length > 0 ||
+      generalInfo.length > 0 ||
+      paragraphs.length > 0 ||
+      Boolean(pdfUrl),
     title: faq.title,
     items,
+    generalInfo,
+    rules,
     paragraphs,
     pdfUrl,
     pdfName,

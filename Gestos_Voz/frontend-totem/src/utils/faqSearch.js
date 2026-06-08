@@ -34,19 +34,53 @@ function recortarParaVoz(texto, max = 320) {
   return `${trozo.trim()}...`;
 }
 
+function obtenerMensajeSinRespuesta(faqData) {
+  const rules = faqData?.rules || [];
+  const reglaDocumento = rules.find((rule) =>
+    /no se encontr[oó]|no existe informaci[oó]n/i.test(rule)
+  );
+
+  if (reglaDocumento) {
+    return reglaDocumento.replace(/^[^:]+:\s*/i, "").trim() || reglaDocumento;
+  }
+
+  return "No encontré información sobre eso en el documento de conocimiento.";
+}
+
 export function buscarRespuestaFaq(mensajeUsuario, faqData) {
   const items = faqData?.items || [];
+  const generalInfo = faqData?.generalInfo || [];
   const paragraphs = faqData?.paragraphs || [];
+  const sinRespuesta = obtenerMensajeSinRespuesta(faqData);
 
-  if (items.length === 0 && paragraphs.length === 0) {
+  if (
+    items.length === 0 &&
+    generalInfo.length === 0 &&
+    paragraphs.length === 0
+  ) {
     if (faqData?.hasPdf) {
-      return "Tengo un documento de preguntas frecuentes cargado, pero aún no pude extraer respuestas legibles. Consulta el PDF en pantalla.";
+      return "Tengo un documento cargado, pero no pude extraer información legible. Revisa el formato del PDF.";
     }
     return "Por el momento no tengo información disponible.";
   }
 
   let mejorPuntaje = 0;
   let mejorRespuesta = null;
+
+  for (const info of generalInfo) {
+    const porEtiqueta = puntuarCoincidencia(mensajeUsuario, info.label) * 2;
+    const porValor = puntuarCoincidencia(mensajeUsuario, info.value);
+    const combinado = puntuarCoincidencia(
+      mensajeUsuario,
+      `${info.label} ${info.value}`
+    );
+    const total = Math.max(porEtiqueta, porValor, combinado);
+
+    if (total > mejorPuntaje) {
+      mejorPuntaje = total;
+      mejorRespuesta = info.value;
+    }
+  }
 
   for (const item of items) {
     const porPregunta = puntuarCoincidencia(mensajeUsuario, item.question) * 2;
@@ -75,5 +109,5 @@ export function buscarRespuestaFaq(mensajeUsuario, faqData) {
     return recortarParaVoz(mejorRespuesta);
   }
 
-  return "No encontré información sobre eso en el documento de preguntas frecuentes. Revisa las consultas listadas o el PDF disponible.";
+  return sinRespuesta;
 }

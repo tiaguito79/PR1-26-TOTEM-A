@@ -439,6 +439,59 @@ backdrop-filter: blur(4px);
   text-decoration: none;
 }
 
+.faq-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.faq-info-card {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(72, 208, 255, 0.16);
+}
+
+.faq-info-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7ea6d8;
+}
+
+.faq-info-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e4edf8;
+}
+
+.faq-rules-section {
+  padding-bottom: 24px;
+}
+
+.faq-rules-list {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.faq-rule-item {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #9eb2cb;
+}
+
+.faq-rule-item:last-child {
+  margin-bottom: 0;
+}
+
 .faq-section {
   margin-top: 16px;
 }

@@ -9,7 +9,7 @@ import {
   requireAuth,
 } from "@/lib/auth.server"
 import { subirPdfAGridFS } from "@/lib/gridfs"
-import { extractTextFromPdfBuffer, parseFaqText } from "@/lib/pdf-service"
+import { extractTextFromPdfBuffer, parseTotemKnowledgeDocument } from "@/lib/pdf-service"
 import {
   createContentsFromCloudinary,
   processFaqPdfFromCloudinary,
@@ -254,7 +254,7 @@ export async function POST(request: Request) {
 
         const pdfFileId = await subirPdfAGridFS(pdfBuffer, pdfFileName, pdfFile.type)
         const extractedText = await extractTextFromPdfBuffer(pdfBuffer)
-        const items = parseFaqText(extractedText)
+        const { items } = parseTotemKnowledgeDocument(extractedText)
 
         const document = await DocumentModel.create({
           name: pdfFile.name,

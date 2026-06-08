@@ -663,7 +663,10 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground">
-                Sube un PDF con formato <span className="text-cyan-400 font-mono">PREGUNTA: ... RESPUESTA: ...</span> para generar automáticamente las FAQs del tótem.
+                Usa el formato <span className="text-cyan-400 font-mono">DOCUMENTO DE CONOCIMIENTO PARA TÓTEM</span> con secciones{" "}
+                <span className="text-cyan-400 font-mono">INFORMACIÓN GENERAL</span>,{" "}
+                <span className="text-cyan-400 font-mono">PREGUNTAS FRECUENTES</span> (PREGUNTA/RESPUESTA) y{" "}
+                <span className="text-cyan-400 font-mono">REGLAS</span>.
               </p>
               <div className="relative">
                 {faqPdf ? (

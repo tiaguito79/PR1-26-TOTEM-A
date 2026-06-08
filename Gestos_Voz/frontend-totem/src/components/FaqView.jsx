@@ -8,8 +8,11 @@ function resolvePdfUrl(pdfUrl) {
 
 export default function FaqView({ faq, totemName }) {
   const items = faq?.items || [];
+  const generalInfo = faq?.generalInfo || [];
+  const rules = faq?.rules || [];
   const pdfHref = resolvePdfUrl(faq?.pdfUrl);
   const hasPdf = Boolean(pdfHref);
+  const hasContent = items.length > 0 || generalInfo.length > 0;
 
   return (
     <div className="faq-layout">
@@ -32,8 +35,8 @@ export default function FaqView({ faq, totemName }) {
           <span className="faq-hero-tag">AYUDA</span>
           <h1>{faq?.title || "Preguntas Frecuentes"}</h1>
           <p>
-            Pregunta en voz alta o consulta el documento PDF cargado por el
-            administrador.
+            Información extraída del documento de conocimiento. Pregunta en voz alta
+            sobre horarios, ubicación, contacto o cualquier consulta del PDF.
           </p>
           {hasPdf && (
             <a
@@ -48,20 +51,34 @@ export default function FaqView({ faq, totemName }) {
         </div>
       </section>
 
+      {generalInfo.length > 0 && (
+        <section className="faq-section">
+          <h2 className="section-title">Información General</h2>
+          <div className="faq-info-grid">
+            {generalInfo.map((info, index) => (
+              <article className="faq-info-card" key={`${info.label}-${index}`}>
+                <span className="faq-info-label">{info.label}</span>
+                <p>{info.value}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="faq-section">
-        <h2 className="section-title">Consultas Disponibles</h2>
+        <h2 className="section-title">Preguntas Frecuentes</h2>
 
         {items.length === 0 ? (
           <div className="faq-empty-card">
             <h3>
               {hasPdf
-                ? "Pregunta con voz sobre el PDF cargado"
+                ? "No se detectaron preguntas en el PDF"
                 : "No hay preguntas frecuentes disponibles"}
             </h3>
             <p>
               {hasPdf
-                ? "El asistente de voz buscará respuestas en el contenido del PDF. También puedes abrir el documento desde el enlace superior."
-                : "El administrador aún no ha cargado información para este tótem."}
+                ? "Verifica que el PDF use el formato PREGUNTA:/RESPUESTA: dentro de la sección PREGUNTAS FRECUENTES."
+                : "El administrador aún no ha cargado el documento de conocimiento para este tótem."}
             </p>
           </div>
         ) : (
@@ -82,6 +99,28 @@ export default function FaqView({ faq, totemName }) {
           </div>
         )}
       </section>
+
+      {rules.length > 0 && (
+        <section className="faq-section faq-rules-section">
+          <h2 className="section-title">Reglas del asistente</h2>
+          <div className="faq-rules-list">
+            {rules.map((rule, index) => (
+              <p className="faq-rule-item" key={index}>
+                {rule}
+              </p>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!hasContent && !hasPdf && (
+        <section className="faq-section">
+          <div className="faq-empty-card">
+            <h3>Sin documento de conocimiento</h3>
+            <p>Sube el PDF en el panel de administración al crear o editar el tótem.</p>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

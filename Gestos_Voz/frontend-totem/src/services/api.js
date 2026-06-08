@@ -33,28 +33,39 @@ const fallbackFaq = {
   ],
 }
 
-export async function getTotemCatalog() {
-  const response = await fetch(`${API_URL}/api/totems/display`)
+export async function loginTotem(usuario, contrasena) {
+  const response = await fetch(`${API_URL}/api/totems/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ usuario, contrasena }),
+  })
+
+  const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    throw new Error(`No se pudo cargar el catálogo (${response.status})`)
+    throw new Error(data.error || data.message || `Login fallido (${response.status})`)
   }
-  return response.json()
+  return data
 }
 
-export async function getTotemDisplay(totemId) {
-  const ref = String(totemId || "").trim()
-  if (!ref) {
-    throw new Error("No se indicó qué tótem mostrar")
+export async function getTotemDisplaySession(token) {
+  const sessionToken =
+    token || (typeof window !== "undefined" && localStorage.getItem("totem_device_token")) || ""
+
+  if (!sessionToken.trim()) {
+    throw new Error("No hay sesión de tótem")
   }
 
-  const response = await fetch(`${API_URL}/api/totems/display/${encodeURIComponent(ref)}`)
+  const response = await fetch(`${API_URL}/api/totems/display/me`, {
+    headers: {
+      Authorization: `Bearer ${sessionToken.trim()}`,
+    },
+  })
+
+  const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error(`Tótem no encontrado (${ref}). Verifica el código en el panel admin.`)
-    }
-    throw new Error(`No se pudo cargar el tótem (${response.status})`)
+    throw new Error(data.error || `No se pudo cargar el tótem (${response.status})`)
   }
-  return response.json()
+  return data
 }
 
 export async function getAdsByTotem(totemId) {

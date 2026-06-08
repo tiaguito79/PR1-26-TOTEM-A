@@ -1162,3 +1162,102 @@ backdrop-filter: blur(4px);
   font-size: 12px;
   color: #56d9ff;
 }
+
+/* Login del tótem */
+.totem-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(0, 180, 255, 0.12), transparent 35%),
+    linear-gradient(180deg, #030814 0%, #07111f 45%, #081222 100%);
+}
+
+.totem-login-card {
+  width: min(460px, 100%);
+  padding: 28px;
+  border-radius: 18px;
+  border: 1px solid rgba(63, 230, 255, 0.18);
+  background: rgba(7, 15, 29, 0.92);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.totem-login-card h1 {
+  margin: 0 0 10px;
+  font-size: 26px;
+}
+
+.totem-login-lead {
+  margin: 0 0 18px;
+  color: #a8bbd0;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.totem-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.totem-login-form label {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8ca8c5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.totem-login-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: white;
+  font-size: 14px;
+}
+
+.totem-login-password-row {
+  display: flex;
+  gap: 8px;
+}
+
+.totem-login-password-row input {
+  flex: 1;
+}
+
+.totem-login-toggle {
+  width: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
+.totem-login-submit {
+  margin-top: 14px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #00c8ff, #00e8d0);
+  color: #031018;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.totem-login-submit:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.totem-login-footnote {
+  margin: 16px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #7f93ad;
+}

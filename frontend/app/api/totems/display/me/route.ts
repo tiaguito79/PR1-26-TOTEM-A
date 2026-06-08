@@ -1,25 +1,28 @@
 import connectDB from "@/lib/mongodb"
 import { corsJson, corsPreflightResponse } from "@/lib/cors"
+import { extractBearerToken } from "@/lib/auth.server"
 import { AuthError } from "@/lib/auth.server"
-import { authorizeTotemDisplayAccess } from "@/lib/totem-display-access.server"
+import { verifyTotemDeviceToken } from "@/lib/totem-auth.server"
 import { buildTotemDisplayResponse } from "@/lib/totem-display-response.server"
 
 export const runtime = "nodejs"
-
-type RouteContext = { params: Promise<{ totemRef: string }> }
 
 export async function OPTIONS() {
   return corsPreflightResponse()
 }
 
-export async function GET(request: Request, { params }: RouteContext) {
+export async function GET(request: Request) {
   try {
     await connectDB()
-    const { totemRef } = await params
 
-    await authorizeTotemDisplayAccess(request, totemRef)
+    const token = extractBearerToken(request)
+    if (!token) {
+      return corsJson({ error: "No autorizado" }, { status: 401 })
+    }
 
-    const payload = await buildTotemDisplayResponse(totemRef)
+    const device = verifyTotemDeviceToken(token)
+    const payload = await buildTotemDisplayResponse(device.totem_id)
+
     if (!payload) {
       return corsJson({ error: "Tótem no encontrado" }, { status: 404 })
     }
@@ -29,7 +32,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     if (error instanceof AuthError) {
       return corsJson({ error: error.message }, { status: error.status })
     }
-    console.error("Error GET totem display:", error)
+    console.error("Error GET totem display/me:", error)
     const msg = error instanceof Error ? error.message : "Error obteniendo datos del tótem"
     return corsJson({ error: msg }, { status: 500 })
   }

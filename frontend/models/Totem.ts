@@ -41,6 +41,7 @@ const TotemSchema = new Schema({
   },
 
   faqPdf: {
+    pdfFileId: { type: String },
     url: { type: String },
     publicId: { type: String },
     name: { type: String },

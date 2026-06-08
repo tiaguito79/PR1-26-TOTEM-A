@@ -176,7 +176,10 @@ export async function getTotemFaqForDisplay(totemRef: string) {
     .sort({ createdAt: -1 })
     .lean()
 
-  if (!faq && totem.faqPdf?.url && totem.faqPdf?.publicId) {
+  if (
+    !faq &&
+    (totem.faqPdf?.pdfFileId || (totem.faqPdf?.url && totem.faqPdf?.publicId))
+  ) {
     const repaired = await ensureTotemFaqFromPdf({
       _id: totem._id,
       nombre: totem.nombre,

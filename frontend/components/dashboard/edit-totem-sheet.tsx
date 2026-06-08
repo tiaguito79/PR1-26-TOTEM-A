@@ -34,7 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { extractPdfTextFromFile } from "@/lib/pdf-client"
+import { uploadTotemFaqPdf } from "@/lib/faq-pdf-upload"
 import { downloadTotemKnowledgeTemplate } from "@/lib/totem-knowledge-template"
 import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
 import { getSedeIdFromCampus, SEDES } from "@/lib/sedes"
@@ -281,17 +281,8 @@ export function EditTotemSheet({
 
         let faqPdfPayload = null
         if (faqPdf) {
-          toast.info("Leyendo y subiendo PDF de FAQ...")
-          const [uploadedPdf, extractedText] = await Promise.all([
-            uploadFileToCloudinary(faqPdf, "raw"),
-            extractPdfTextFromFile(faqPdf),
-          ])
-          faqPdfPayload = {
-            url: uploadedPdf.url,
-            publicId: uploadedPdf.publicId,
-            name: faqPdf.name,
-            extractedText,
-          }
+          toast.info("Guardando PDF de FAQ en MongoDB...")
+          faqPdfPayload = await uploadTotemFaqPdf(faqPdf, token || "")
         }
 
         const response = await fetch(`/api/totems/${totem.id}`, {
@@ -321,11 +312,8 @@ export function EditTotemSheet({
         }
         updateResult = await response.json().catch(() => null)
       } else if (faqPdf) {
-        toast.info("Leyendo y subiendo PDF de FAQ...")
-        const [uploadedPdf, extractedText] = await Promise.all([
-          uploadFileToCloudinary(faqPdf, "raw"),
-          extractPdfTextFromFile(faqPdf),
-        ])
+        toast.info("Guardando PDF de FAQ en MongoDB...")
+        const faqPdfPayload = await uploadTotemFaqPdf(faqPdf, token || "")
 
         const response = await fetch(`/api/totems/${totem.id}`, {
           method: "PUT",
@@ -338,12 +326,7 @@ export function EditTotemSheet({
             campus_id: selectedSede,
             plantilla: getTemplateNameFromId(selectedTemplate),
             estado: selectedEstado,
-            faqPdf: {
-              url: uploadedPdf.url,
-              publicId: uploadedPdf.publicId,
-              name: faqPdf.name,
-              extractedText,
-            },
+            faqPdf: faqPdfPayload,
             info_bloques: bloquesValidos.length > 0 ? bloquesValidos : undefined,
           }),
         })

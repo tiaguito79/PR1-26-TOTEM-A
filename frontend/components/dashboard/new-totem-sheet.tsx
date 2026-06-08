@@ -47,7 +47,7 @@ import {
   isPresetNameForOtherSede,
   type TotemNamePresetItem,
 } from "@/lib/totem-name-presets"
-import { extractPdfTextFromFile } from "@/lib/pdf-client"
+import { uploadTotemFaqPdf } from "@/lib/faq-pdf-upload"
 import { downloadTotemKnowledgeTemplate } from "@/lib/totem-knowledge-template"
 import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
 import { SEDES } from "@/lib/sedes"
@@ -309,17 +309,8 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
 
       let faqPdfPayload = null
       if (faqPdf) {
-        toast.info("Leyendo y subiendo PDF de FAQ...")
-        const [uploadedPdf, extractedText] = await Promise.all([
-          uploadFileToCloudinary(faqPdf, "raw"),
-          extractPdfTextFromFile(faqPdf),
-        ])
-        faqPdfPayload = {
-          url: uploadedPdf.url,
-          publicId: uploadedPdf.publicId,
-          name: faqPdf.name,
-          extractedText,
-        }
+        toast.info("Guardando PDF de FAQ en MongoDB...")
+        faqPdfPayload = await uploadTotemFaqPdf(faqPdf, token || "")
       }
 
       const bloquesValidos = infoBloques.filter((b) => b.titulo.trim() && b.contenido.trim())
@@ -687,7 +678,8 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground">
-                Usa el formato <span className="text-cyan-400 font-mono">DOCUMENTO DE CONOCIMIENTO PARA TÓTEM</span> con secciones{" "}
+                El PDF se guarda en MongoDB Atlas (no en Cloudinary). Usa el formato{" "}
+                <span className="text-cyan-400 font-mono">DOCUMENTO DE CONOCIMIENTO PARA TÓTEM</span> con secciones{" "}
                 <span className="text-cyan-400 font-mono">INFORMACIÓN GENERAL</span>,{" "}
                 <span className="text-cyan-400 font-mono">PREGUNTAS FRECUENTES</span> (PREGUNTA/RESPUESTA) y{" "}
                 <span className="text-cyan-400 font-mono">REGLAS</span>.

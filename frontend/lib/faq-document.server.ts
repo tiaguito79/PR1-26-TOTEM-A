@@ -1,7 +1,8 @@
 import mongoose from "mongoose"
 import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
-import { fetchCloudinaryPdfBuffer, fetchRemoteBuffer } from "@/lib/cloudinary-server"
+import { fetchCloudinaryPdfBuffer } from "@/lib/cloudinary-server"
+import { leerPdfGridFS } from "@/lib/gridfs"
 import {
   buildFaqSearchParagraphs,
   extractTextFromPdfBuffer,
@@ -48,25 +49,34 @@ export async function loadFaqKnowledgeForDisplay(faq: LeanFaq) {
     pdfUrl = `/api/contents/file/${faq.pdfFileId}`
   }
 
-  if (!extractedText.trim() && (pdfUrl || faq.pdfCloudinaryPublicId)) {
-    try {
-      const pdfBuffer = faq.pdfCloudinaryPublicId
-        ? await fetchCloudinaryPdfBuffer({
-            url: pdfUrl || "",
-            publicId: faq.pdfCloudinaryPublicId,
-          })
-        : await fetchRemoteBuffer(pdfUrl!)
-      extractedText = await extractTextFromPdfBuffer(pdfBuffer)
+  const gridFileId = faq.pdfFileId || null
 
-      if (faq.documentId && extractedText.trim()) {
-        await DocumentModel.findByIdAndUpdate(faq.documentId, {
-          extractedText,
-          ...(pdfUrl && !pdfUrl.startsWith("/api/") ? { fileUrl: pdfUrl } : {}),
-        })
-      }
+  if (!extractedText.trim() && gridFileId) {
+    try {
+      const pdfBuffer = await leerPdfGridFS(gridFileId)
+      extractedText = await extractTextFromPdfBuffer(pdfBuffer)
+    } catch (error) {
+      console.error("Error re-extrayendo PDF desde MongoDB:", error)
+    }
+  }
+
+  if (!extractedText.trim() && faq.pdfCloudinaryPublicId) {
+    try {
+      const pdfBuffer = await fetchCloudinaryPdfBuffer({
+        url: pdfUrl || "",
+        publicId: faq.pdfCloudinaryPublicId,
+      })
+      extractedText = await extractTextFromPdfBuffer(pdfBuffer)
     } catch (error) {
       console.error("Error re-extrayendo PDF de FAQ:", error)
     }
+  }
+
+  if (faq.documentId && extractedText.trim()) {
+    await DocumentModel.findByIdAndUpdate(faq.documentId, {
+      extractedText,
+      ...(pdfUrl ? { fileUrl: pdfUrl } : {}),
+    })
   }
 
   if (extractedText.trim()) {

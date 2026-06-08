@@ -13,7 +13,7 @@ import { extractTextFromPdfBuffer, parseTotemKnowledgeDocument } from "@/lib/pdf
 import {
   createContentsFromCloudinary,
   ensureTotemFaqFromPdf,
-  processFaqPdfFromCloudinary,
+  processFaqPdf,
   type UploadedArchivoInput,
   type UploadedPdfInput,
 } from "@/lib/totem-content.server"
@@ -98,7 +98,9 @@ async function createTotemFromCloudinary(body: {
     ...(Array.isArray(body.info_bloques) && body.info_bloques.length > 0
       ? { info_bloques: body.info_bloques }
       : {}),
-    ...(body.faqPdf?.url && body.faqPdf.publicId ? { faqPdf: body.faqPdf } : {}),
+    ...(body.faqPdf?.pdfFileId || (body.faqPdf?.url && body.faqPdf?.publicId)
+      ? { faqPdf: body.faqPdf }
+      : {}),
   })
 
   let faqMeta: {
@@ -108,13 +110,9 @@ async function createTotemFromCloudinary(body: {
     warning?: string
   } | null = null
 
-  if (body.faqPdf?.url && body.faqPdf.publicId) {
+  if (body.faqPdf?.pdfFileId || (body.faqPdf?.url && body.faqPdf?.publicId)) {
     try {
-      const faqResult = await processFaqPdfFromCloudinary(
-        body.faqPdf,
-        newTotem._id,
-        body.nombre
-      )
+      const faqResult = await processFaqPdf(body.faqPdf, newTotem._id, body.nombre)
       faqMeta = {
         linked: true,
         itemsCount: faqResult.itemsCount,

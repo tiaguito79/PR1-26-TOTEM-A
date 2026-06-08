@@ -8,7 +8,7 @@ import { extractTextFromPdfBuffer, parseTotemKnowledgeDocument } from "@/lib/pdf
 import {
   createContentsFromCloudinary,
   deleteTotemContents,
-  replaceTotemFaqFromCloudinary,
+  replaceTotemFaq,
   type UploadedArchivoInput,
   type UploadedPdfInput,
 } from "@/lib/totem-content.server"
@@ -265,12 +265,12 @@ export async function PUT(request: Request, { params }: RouteContext) {
       }
     )
 
-    if (body.faqPdf?.url && body.faqPdf.publicId) {
+    if (body.faqPdf?.pdfFileId || (body.faqPdf?.url && body.faqPdf?.publicId)) {
       update.faqPdf = body.faqPdf
       await Totem.findByIdAndUpdate(id, { faqPdf: body.faqPdf })
 
       try {
-        const faqResult = await replaceTotemFaqFromCloudinary(
+        const faqResult = await replaceTotemFaq(
           id,
           update.nombre || totem.nombre,
           body.faqPdf as UploadedPdfInput

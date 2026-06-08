@@ -4,7 +4,9 @@ import FaqView from "../components/FaqView";
 import GestureDetector from "../components/GestureDetector";
 import VoiceAssistant from "../components/VoiceAssistant";
 import TotemTemplateView from "../components/TotemTemplateView";
-import { getConfiguredTotemId, getTotemDisplay } from "../services/api";
+import { getTotemDisplay } from "../services/api";
+import { resolveTotemRef } from "../utils/totemRef";
+import TotemSelector from "../components/TotemSelector";
 
 export default function TotemScreen() {
   const [showFaq, setShowFaq] = useState(false);
@@ -13,18 +15,28 @@ export default function TotemScreen() {
   const [faq, setFaq] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [totemRef, setTotemRef] = useState("");
+  const [needsSelection, setNeedsSelection] = useState(false);
   const timeoutRef = useRef(null);
 
-  const TOTEM_ID = getConfiguredTotemId();
-
   useEffect(() => {
+    const ref = resolveTotemRef();
+    setTotemRef(ref);
+
+    if (!ref) {
+      setNeedsSelection(true);
+      setLoading(false);
+      return undefined;
+    }
+
     const loadData = async () => {
       try {
-        const data = await getTotemDisplay(TOTEM_ID);
+        const data = await getTotemDisplay(ref);
         setTotem(data.totem || null);
         setMedia(data.media || { images: [], videos: [] });
         setFaq(data.faq || null);
         setError("");
+        setNeedsSelection(false);
         console.log(
           "Tótem cargado:",
           data.totem?.nombre,
@@ -34,6 +46,7 @@ export default function TotemScreen() {
       } catch (err) {
         console.error("Error cargando datos:", err);
         setError(err.message || "No se pudo cargar el tótem");
+        setNeedsSelection(true);
       } finally {
         setLoading(false);
       }
@@ -65,13 +78,9 @@ export default function TotemScreen() {
     );
   }
 
-  if (error && !totem) {
+  if (needsSelection) {
     return (
-      <div className="screen-center">
-        <h1>No se pudo conectar con el tótem</h1>
-        <p>{error}</p>
-        <p>Verifica VITE_API_URL y VITE_TOTEM_ID en las variables de entorno.</p>
-      </div>
+      <TotemSelector errorMessage={error} attemptedRef={totemRef} />
     );
   }
 

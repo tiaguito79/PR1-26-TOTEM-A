@@ -8,6 +8,7 @@ import { getSedeIdFromCampus, getSedeName } from "@/lib/sedes"
 
 interface Totem {
   id: string
+  totem_id: string
   nombre: string
   tiempoTranscurrido: string
   sede: string
@@ -58,6 +59,7 @@ export default function DashboardPage() {
 
       const mappedData = data.map((item: any) => ({
         id: item._id,
+        totem_id: item.totem_id || item._id,
         nombre: item.nombre,
         tiempoTranscurrido: "Sincronizado",
         sede: getSedeName(getSedeIdFromCampus(item.campus_id || item.sede || "")),

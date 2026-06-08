@@ -1,5 +1,8 @@
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/$/, "")
-const TOTEM_ID = import.meta.env.VITE_TOTEM_ID || "demo-totem"
+
+export function getApiBaseUrl() {
+  return API_URL
+}
 
 const fallbackAds = [
   {
@@ -30,19 +33,31 @@ const fallbackFaq = {
   ],
 }
 
-export function getConfiguredTotemId() {
-  return TOTEM_ID
+export async function getTotemCatalog() {
+  const response = await fetch(`${API_URL}/api/totems/display`)
+  if (!response.ok) {
+    throw new Error(`No se pudo cargar el catálogo (${response.status})`)
+  }
+  return response.json()
 }
 
-export async function getTotemDisplay(totemId = TOTEM_ID) {
-  const response = await fetch(`${API_URL}/api/totems/display/${encodeURIComponent(totemId)}`)
+export async function getTotemDisplay(totemId) {
+  const ref = String(totemId || "").trim()
+  if (!ref) {
+    throw new Error("No se indicó qué tótem mostrar")
+  }
+
+  const response = await fetch(`${API_URL}/api/totems/display/${encodeURIComponent(ref)}`)
   if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(`Tótem no encontrado (${ref}). Verifica el código en el panel admin.`)
+    }
     throw new Error(`No se pudo cargar el tótem (${response.status})`)
   }
   return response.json()
 }
 
-export async function getAdsByTotem(totemId = TOTEM_ID) {
+export async function getAdsByTotem(totemId) {
   try {
     const response = await fetch(`${API_URL}/api/ads/totem/${encodeURIComponent(totemId)}`)
     if (!response.ok) throw new Error("No se pudo obtener publicidad")
@@ -53,7 +68,7 @@ export async function getAdsByTotem(totemId = TOTEM_ID) {
   }
 }
 
-export async function getFaqByTotem(totemId = TOTEM_ID) {
+export async function getFaqByTotem(totemId) {
   try {
     const response = await fetch(`${API_URL}/api/faqs/totem/${encodeURIComponent(totemId)}`)
     if (!response.ok) throw new Error("No se pudo obtener FAQ")

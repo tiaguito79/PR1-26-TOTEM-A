@@ -989,3 +989,176 @@ backdrop-filter: blur(4px);
   line-height: 1.5;
   color: #d7e4f5;
 }
+
+/* Selector de tótem */
+.totem-selector {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(0, 180, 255, 0.12), transparent 35%),
+    linear-gradient(180deg, #030814 0%, #07111f 45%, #081222 100%);
+}
+
+.totem-selector-card {
+  width: min(760px, 100%);
+  padding: 28px;
+  border-radius: 18px;
+  border: 1px solid rgba(63, 230, 255, 0.18);
+  background: rgba(7, 15, 29, 0.92);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.totem-selector-tag {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #b9fff5;
+  background: rgba(0, 232, 208, 0.1);
+  border: 1px solid rgba(0, 232, 208, 0.22);
+}
+
+.totem-selector-card h1 {
+  margin: 0 0 10px;
+  font-size: 28px;
+}
+
+.totem-selector-lead {
+  margin: 0 0 18px;
+  color: #a8bbd0;
+  line-height: 1.6;
+}
+
+.totem-selector-alert {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 90, 90, 0.08);
+  border: 1px solid rgba(255, 90, 90, 0.25);
+  color: #ffd5d5;
+}
+
+.totem-selector-alert p {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+.totem-selector-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #8ca8c5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.totem-selector-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.totem-selector-form-row input {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: white;
+  font-size: 14px;
+}
+
+.totem-selector-form-row button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #00c8ff, #00e8d0);
+  color: #031018;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.totem-selector-hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #7f93ad;
+}
+
+.totem-selector-hint code {
+  color: #9fdcff;
+  word-break: break-all;
+}
+
+.totem-selector-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 24px 0 12px;
+}
+
+.totem-selector-list-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.totem-selector-list-header span {
+  font-size: 12px;
+  color: #8ca8c5;
+}
+
+.totem-selector-status {
+  color: #8ca8c5;
+  font-size: 13px;
+}
+
+.totem-selector-status.error {
+  color: #ffb0b0;
+}
+
+.totem-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.totem-selector-item {
+  text-align: left;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: white;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.totem-selector-item:hover {
+  border-color: rgba(0, 232, 208, 0.35);
+  transform: translateY(-1px);
+}
+
+.totem-selector-item-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.totem-selector-item-top strong {
+  font-size: 15px;
+}
+
+.totem-selector-item-top span {
+  font-size: 11px;
+  color: #8ca8c5;
+}
+
+.totem-selector-item code {
+  font-size: 12px;
+  color: #56d9ff;
+}

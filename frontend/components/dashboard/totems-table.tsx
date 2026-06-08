@@ -34,6 +34,7 @@ import { getSedeName } from "@/lib/sedes"
 
 export interface Totem {
   id: string
+  totem_id: string
   nombre: string
   tiempoTranscurrido: string
   sede: string
@@ -342,6 +343,9 @@ export function TotemsTable({
                         </div>
                         <div>
                           <p className="font-medium text-sm text-foreground">{totem.nombre}</p>
+                          <p className="text-[10px] text-cyan-400/90 font-mono">
+                            {totem.totem_id}
+                          </p>
                           <p className="text-[10px] text-muted-foreground">
                             {totem.tiempoTranscurrido}
                           </p>

@@ -1333,3 +1333,31 @@ backdrop-filter: blur(4px);
   color: #ffc107;
   font-size: 13px;
 }
+
+.totem-maintenance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.totem-maintenance-btn {
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.totem-maintenance-btn.primary {
+  background: linear-gradient(135deg, #00c8ff, #00e8d0);
+  color: #031018;
+}
+
+.totem-maintenance-btn.secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e8d4a8;
+}

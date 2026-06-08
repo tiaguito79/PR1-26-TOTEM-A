@@ -84,6 +84,16 @@ export default function TotemScreen() {
     loadTotemData();
   }, [loadTotemData]);
 
+  const handleBackToLogin = useCallback(() => {
+    clearTotemSession();
+    setTotem(null);
+    setMedia({ images: [], videos: [] });
+    setFaq(null);
+    setError("");
+    setNeedsLogin(true);
+    setLoading(false);
+  }, []);
+
   if (loading) {
     return (
       <div className="screen-center">
@@ -97,16 +107,23 @@ export default function TotemScreen() {
   }
 
   if (totem?.estado === "En Mantenimiento") {
-    return <TotemMaintenanceView totem={totem} />;
+    return (
+      <TotemMaintenanceView
+        totem={totem}
+        mode="maintenance"
+        onBackToLogin={handleBackToLogin}
+        onRetry={loadTotemData}
+      />
+    );
   }
 
   if (totem?.estado === "Inactivo") {
     return (
       <TotemMaintenanceView
-        totem={{
-          ...totem,
-          nombre: `${totem.nombre} (inactivo)`,
-        }}
+        totem={totem}
+        mode="inactive"
+        onBackToLogin={handleBackToLogin}
+        onRetry={loadTotemData}
       />
     );
   }

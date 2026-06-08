@@ -151,6 +151,36 @@ export async function processFaqPdfFromCloudinary(
   }
 }
 
+export async function ensureTotemFaqFromPdf(totem: {
+  _id: mongoose.Types.ObjectId
+  nombre: string
+  faqPdf?: UploadedPdfInput | null
+}) {
+  const pdf = totem.faqPdf
+  if (!pdf?.url || !pdf.publicId) return null
+
+  const existing = await Faq.findOne({ totemId: totem._id, isActive: true }).sort({
+    createdAt: -1,
+  })
+  if (existing) return existing
+
+  try {
+    const result = await processFaqPdfFromCloudinary(pdf, totem._id, totem.nombre)
+    return result.faq
+  } catch (error) {
+    console.error("Error reparando FAQ desde totem.faqPdf:", error)
+    return Faq.create({
+      title: `FAQ - ${totem.nombre}`,
+      campusId: null,
+      totemId: totem._id,
+      pdfCloudinaryPublicId: pdf.publicId,
+      pdfUrl: pdf.url,
+      items: [],
+      isActive: true,
+    })
+  }
+}
+
 export async function replaceTotemFaqFromCloudinary(
   totemId: mongoose.Types.ObjectId | string,
   totemNombre: string,

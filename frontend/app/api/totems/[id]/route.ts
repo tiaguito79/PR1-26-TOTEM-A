@@ -266,6 +266,9 @@ export async function PUT(request: Request, { params }: RouteContext) {
     )
 
     if (body.faqPdf?.url && body.faqPdf.publicId) {
+      update.faqPdf = body.faqPdf
+      await Totem.findByIdAndUpdate(id, { faqPdf: body.faqPdf })
+
       try {
         const faqResult = await replaceTotemFaqFromCloudinary(
           id,
@@ -274,6 +277,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
         )
         return NextResponse.json({
           ...(updated?.toObject?.() ?? updated),
+          faqPdf: body.faqPdf,
           faqLinked: true,
           faqItemsCount: faqResult.itemsCount,
           faqExtractedOk: faqResult.extractedOk,

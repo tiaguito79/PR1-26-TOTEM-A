@@ -4,6 +4,7 @@ import Content from "@/models/Content"
 import Faq from "@/models/Faq"
 import Totem from "@/models/Totem"
 import { loadFaqKnowledgeForDisplay } from "@/lib/faq-document.server"
+import { ensureTotemFaqFromPdf } from "@/lib/totem-content.server"
 import { resolveTotemRef } from "@/lib/totem-resolve"
 import {
   getTemplateMediaRequirements,
@@ -168,12 +169,23 @@ export async function getTotemFaqForDisplay(totemRef: string) {
     }
   }
 
-  const faq = await Faq.findOne({
+  let faq = await Faq.findOne({
     totemId: totem._id,
     isActive: true,
   })
     .sort({ createdAt: -1 })
     .lean()
+
+  if (!faq && totem.faqPdf?.url && totem.faqPdf?.publicId) {
+    const repaired = await ensureTotemFaqFromPdf({
+      _id: totem._id,
+      nombre: totem.nombre,
+      faqPdf: totem.faqPdf,
+    })
+    if (repaired) {
+      faq = await Faq.findById(repaired._id).lean()
+    }
+  }
 
   if (!faq) {
     return {

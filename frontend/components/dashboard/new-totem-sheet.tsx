@@ -279,6 +279,11 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
       return
     }
 
+    if (!faqPdf) {
+      toast.error("Debes subir el PDF de conocimiento para que el asistente de voz pueda responder.")
+      return
+    }
+
     if (!validarArchivos()) {
       toast.error("Debes subir todos los archivos requeridos por la plantilla seleccionada.")
       return
@@ -672,7 +677,7 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="w-4 h-4 text-muted-foreground" />
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  PDF de Preguntas Frecuentes (Opcional)
+                  PDF de Preguntas Frecuentes (Requerido para voz/FAQ)
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground">

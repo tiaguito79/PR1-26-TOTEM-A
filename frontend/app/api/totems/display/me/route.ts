@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     }
 
     const device = verifyTotemDeviceToken(token)
-    const payload = await buildTotemDisplayResponse(device.totem_id)
+    const payload = await buildTotemDisplayResponse(device.totemId || device.totem_id)
 
     if (!payload) {
       return corsJson({ error: "Tótem no encontrado" }, { status: 404 })

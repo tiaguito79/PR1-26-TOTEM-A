@@ -12,6 +12,7 @@ import { subirPdfAGridFS } from "@/lib/gridfs"
 import { extractTextFromPdfBuffer, parseTotemKnowledgeDocument } from "@/lib/pdf-service"
 import {
   createContentsFromCloudinary,
+  ensureTotemFaqFromPdf,
   processFaqPdfFromCloudinary,
   type UploadedArchivoInput,
   type UploadedPdfInput,
@@ -97,6 +98,7 @@ async function createTotemFromCloudinary(body: {
     ...(Array.isArray(body.info_bloques) && body.info_bloques.length > 0
       ? { info_bloques: body.info_bloques }
       : {}),
+    ...(body.faqPdf?.url && body.faqPdf.publicId ? { faqPdf: body.faqPdf } : {}),
   })
 
   let faqMeta: {
@@ -107,16 +109,34 @@ async function createTotemFromCloudinary(body: {
   } | null = null
 
   if (body.faqPdf?.url && body.faqPdf.publicId) {
-    const faqResult = await processFaqPdfFromCloudinary(
-      body.faqPdf,
-      newTotem._id,
-      body.nombre
-    )
-    faqMeta = {
-      linked: true,
-      itemsCount: faqResult.itemsCount,
-      extractedOk: faqResult.extractedOk,
-      warning: faqResult.warning,
+    try {
+      const faqResult = await processFaqPdfFromCloudinary(
+        body.faqPdf,
+        newTotem._id,
+        body.nombre
+      )
+      faqMeta = {
+        linked: true,
+        itemsCount: faqResult.itemsCount,
+        extractedOk: faqResult.extractedOk,
+        warning: faqResult.warning,
+      }
+    } catch (error) {
+      console.error("[POST totem] Error vinculando FAQ:", error)
+      const repaired = await ensureTotemFaqFromPdf({
+        _id: newTotem._id,
+        nombre: body.nombre,
+        faqPdf: body.faqPdf,
+      })
+      faqMeta = {
+        linked: Boolean(repaired),
+        itemsCount: repaired?.items?.length ?? 0,
+        extractedOk: false,
+        warning:
+          error instanceof Error
+            ? `El PDF quedó guardado, pero hubo un problema al procesarlo: ${error.message}`
+            : "El PDF quedó guardado, pero hubo un problema al procesarlo.",
+      }
     }
   }
 

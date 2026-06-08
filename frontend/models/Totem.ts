@@ -40,6 +40,12 @@ const TotemSchema = new Schema({
     default: 0
   },
 
+  faqPdf: {
+    url: { type: String },
+    publicId: { type: String },
+    name: { type: String },
+  },
+
   fecha_registro: { type: Date, default: Date.now }
 }, {
   timestamps: true

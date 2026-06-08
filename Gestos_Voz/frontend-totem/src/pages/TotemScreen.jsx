@@ -4,7 +4,7 @@ import AdCarousel from "../components/AdCarousel";
 import FaqView from "../components/FaqView";
 import GestureDetector from "../components/GestureDetector";
 import VoiceAssistant from "../components/VoiceAssistant";
-import { getAdsByTotem, getFaqByTotem } from "../services/api";
+import { getConfiguredTotemId, getTotemDisplay } from "../services/api";
 
 export default function TotemScreen() {
   const [showFaq, setShowFaq] = useState(false);
@@ -13,16 +13,15 @@ export default function TotemScreen() {
   const [loading, setLoading] = useState(true);
   const timeoutRef = useRef(null);
 
-  const TOTEM_ID = "demo-totem";
+  const TOTEM_ID = getConfiguredTotemId();
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const adsData = await getAdsByTotem(TOTEM_ID);
-        const faqData = await getFaqByTotem(TOTEM_ID);
-        setAds(Array.isArray(adsData) ? adsData : []);
-        setFaq(faqData || null);
-        console.log("📋 faq cargado:", faqData); // ← log en el lugar correcto
+        const data = await getTotemDisplay(TOTEM_ID);
+        setAds(Array.isArray(data.ads) ? data.ads : []);
+        setFaq(data.faq || null);
+        console.log("Tótem cargado:", data.totem?.nombre, data.faq);
       } catch (error) {
         console.error("Error cargando datos:", error);
       } finally {

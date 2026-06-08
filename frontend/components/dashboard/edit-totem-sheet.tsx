@@ -35,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { extractPdfTextFromFile } from "@/lib/pdf-client"
+import { downloadTotemKnowledgeTemplate } from "@/lib/totem-knowledge-template"
 import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
 import { getSedeIdFromCampus, SEDES } from "@/lib/sedes"
 import { getSessionAdmin, isSuperAdminSession } from "@/lib/session-admin"
@@ -680,6 +681,15 @@ export function EditTotemSheet({
                 <span className="text-cyan-400 font-mono">PREGUNTAS FRECUENTES</span> y{" "}
                 <span className="text-cyan-400 font-mono">REGLAS</span>.
               </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10"
+                onClick={downloadTotemKnowledgeTemplate}
+              >
+                Descargar plantilla de ejemplo (.txt)
+              </Button>
               <div className="relative">
                 {faqPdf ? (
                   <div className="flex items-center gap-3 p-3 rounded-lg border border-cyan-500/30 bg-cyan-500/5">

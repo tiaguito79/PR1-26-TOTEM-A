@@ -40,10 +40,20 @@ export type TotemKnowledgeDocument = {
 }
 
 function normalizeDocumentText(text: string) {
-  return text
+  let normalized = text
     .replace(/\r\n/g, "\n")
     .replace(/\u00a0/g, " ")
+    .replace(/\u2028/g, "\n")
     .trim()
+
+  // Los extractores de PDF suelen pegar todo en una sola línea.
+  normalized = normalized
+    .replace(/\s+(SECCI[OÓ]N:\s*)/gi, "\n$1")
+    .replace(/\s+(PREGUNTA:\s*)/gi, "\n$1")
+    .replace(/\s+(RESPUESTA:\s*)/gi, "\n$1")
+    .replace(/\s+(REGLA:\s*)/gi, "\n$1")
+
+  return normalized
 }
 
 function cleanInline(value: string) {
@@ -57,11 +67,13 @@ function extractSections(text: string) {
     .map((chunk) => chunk.trim())
     .filter(Boolean)
 
-  if (chunks.length === 0 || !/^SECCI[OÓ]N:/i.test(chunks[0] || "")) {
+  const sectionChunks = chunks.filter((chunk) => /^SECCI[OÓ]N:/i.test(chunk))
+
+  if (sectionChunks.length === 0) {
     return [{ title: "DOCUMENTO", content: normalized }]
   }
 
-  return chunks.map((chunk) => {
+  return sectionChunks.map((chunk) => {
     const header = chunk.match(/^SECCI[OÓ]N:\s*([^\n]+)\s*/i)
     return {
       title: header ? header[1].trim() : "DOCUMENTO",
@@ -72,7 +84,10 @@ function extractSections(text: string) {
 
 function parseGeneralInfoSection(content: string): GeneralInfoItem[] {
   const items: GeneralInfoItem[] = []
-  const lines = content.split("\n").map((line) => line.trim()).filter(Boolean)
+  const cleanedContent = content
+    .replace(/^SECCI[OÓ]N:\s*INFORMACI[OÓ]N GENERAL\s*/i, "")
+    .trim()
+  const lines = cleanedContent.split("\n").map((line) => line.trim()).filter(Boolean)
 
   for (const line of lines) {
     if (/^(PREGUNTA|RESPUESTA|REGLA|SECCI[OÓ]N)\b/i.test(line)) continue
@@ -84,13 +99,13 @@ function parseGeneralInfoSection(content: string): GeneralInfoItem[] {
     })
   }
 
-  if (items.length > 0) return items
+  if (items.length >= 2) return items
 
   const inlineRegex =
     /([A-Za-zÁÉÍÓÚáéíóúñÑ0-9][A-Za-zÁÉÍÓÚáéíóúñÑ0-9\s]{2,45}):\s*([\s\S]*?)(?=\s+[A-Za-zÁÉÍÓÚáéíóúñÑ0-9][A-Za-zÁÉÍÓÚáéíóúñÑ0-9\s]{2,45}:\s*|PREGUNTA:|SECCI[OÓ]N:|REGLA:|$)/gi
   let match
 
-  while ((match = inlineRegex.exec(content)) !== null) {
+  while ((match = inlineRegex.exec(cleanedContent)) !== null) {
     const label = cleanInline(match[1])
     const value = cleanInline(match[2])
     if (

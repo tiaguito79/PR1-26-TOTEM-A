@@ -99,24 +99,28 @@ async function createTotemFromCloudinary(body: {
       : {}),
   })
 
+  let faqMeta: {
+    linked: boolean
+    itemsCount: number
+    extractedOk: boolean
+    warning?: string
+  } | null = null
+
   if (body.faqPdf?.url && body.faqPdf.publicId) {
-    try {
-      const faqResult = await processFaqPdfFromCloudinary(
-        body.faqPdf,
-        newTotem._id,
-        body.nombre
-      )
-      if (faqResult.itemsCount === 0) {
-        console.warn(
-          "[POST totem] PDF de FAQ guardado pero sin preguntas detectadas. Verifica el formato del documento."
-        )
-      }
-    } catch (pdfError) {
-      console.error("[POST totem] ERROR procesando PDF Cloudinary:", pdfError)
+    const faqResult = await processFaqPdfFromCloudinary(
+      body.faqPdf,
+      newTotem._id,
+      body.nombre
+    )
+    faqMeta = {
+      linked: true,
+      itemsCount: faqResult.itemsCount,
+      extractedOk: faqResult.extractedOk,
+      warning: faqResult.warning,
     }
   }
 
-  return newTotem
+  return { totem: newTotem, faq: faqMeta }
 }
 
 export async function GET(request: Request) {
@@ -165,8 +169,17 @@ export async function POST(request: Request) {
         }
       }
 
-      const newTotem = await createTotemFromCloudinary(body)
-      return NextResponse.json(newTotem, { status: 201 })
+      const { totem, faq } = await createTotemFromCloudinary(body)
+      return NextResponse.json(
+        {
+          ...totem.toObject(),
+          faqLinked: Boolean(faq?.linked),
+          faqItemsCount: faq?.itemsCount ?? 0,
+          faqExtractedOk: faq?.extractedOk ?? false,
+          faqWarning: faq?.warning ?? null,
+        },
+        { status: 201 }
+      )
     }
 
     const formData = await request.formData()
@@ -257,34 +270,32 @@ export async function POST(request: Request) {
     const pdfFile = formData.get("faqPdf") as File | null
 
     if (pdfFile && pdfFile.size > 0) {
-      try {
-        const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer())
-        const pdfFileName = `${Date.now()}-${pdfFile.name}`
+      const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer())
+      const pdfFileName = `${Date.now()}-${pdfFile.name}`
+      const pdfFileId = await subirPdfAGridFS(pdfBuffer, pdfFileName, pdfFile.type)
+      const extractedText = await extractTextFromPdfBuffer(pdfBuffer)
+      const { items } = parseTotemKnowledgeDocument(extractedText)
+      const pdfUrl = `/api/contents/file/${pdfFileId}`
 
-        const pdfFileId = await subirPdfAGridFS(pdfBuffer, pdfFileName, pdfFile.type)
-        const extractedText = await extractTextFromPdfBuffer(pdfBuffer)
-        const { items } = parseTotemKnowledgeDocument(extractedText)
+      const document = await DocumentModel.create({
+        name: pdfFile.name,
+        type: "faq_pdf",
+        fileId: pdfFileId,
+        fileUrl: pdfUrl,
+        mimeType: pdfFile.type,
+        extractedText,
+      })
 
-        const document = await DocumentModel.create({
-          name: pdfFile.name,
-          type: "faq_pdf",
-          fileId: pdfFileId,
-          mimeType: pdfFile.type,
-          extractedText,
-        })
-
-        await Faq.create({
-          title: `FAQ - ${nombre}`,
-          campusId: null,
-          totemId: newTotem._id,
-          documentId: document._id,
-          pdfFileId,
-          items,
-          isActive: true,
-        })
-      } catch (pdfError) {
-        console.error("[POST totem] ERROR procesando PDF:", pdfError)
-      }
+      await Faq.create({
+        title: `FAQ - ${nombre}`,
+        campusId: null,
+        totemId: newTotem._id,
+        documentId: document._id,
+        pdfFileId,
+        pdfUrl,
+        items,
+        isActive: true,
+      })
     }
 
     return NextResponse.json(newTotem, { status: 201 })

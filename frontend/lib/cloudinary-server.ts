@@ -45,9 +45,55 @@ export async function deleteCloudinaryAsset(
 }
 
 export async function fetchRemoteBuffer(url: string): Promise<Buffer> {
-  const response = await fetch(url)
+  const response = await fetch(url, {
+    headers: { Accept: "application/pdf,*/*" },
+  })
   if (!response.ok) {
     throw new Error(`No se pudo descargar el archivo (${response.status})`)
   }
   return Buffer.from(await response.arrayBuffer())
+}
+
+export async function fetchCloudinaryPdfBuffer(pdf: {
+  url: string
+  publicId: string
+}): Promise<Buffer> {
+  const errors: string[] = []
+
+  if (pdf.url) {
+    try {
+      return await fetchRemoteBuffer(pdf.url)
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  if (pdf.publicId) {
+    try {
+      getCloudinaryConfig()
+      const resource = await cloudinary.api.resource(pdf.publicId, {
+        resource_type: "raw",
+        type: "upload",
+      })
+      if (resource.secure_url) {
+        return await fetchRemoteBuffer(resource.secure_url)
+      }
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error))
+    }
+
+    try {
+      getCloudinaryConfig()
+      const signedUrl = cloudinary.url(pdf.publicId, {
+        resource_type: "raw",
+        secure: true,
+        type: "upload",
+      })
+      return await fetchRemoteBuffer(signedUrl)
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  throw new Error(errors.join(" | ") || "No se pudo descargar el PDF de Cloudinary")
 }

@@ -176,36 +176,34 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
       const pdfFile = formData.get("faqPdf") as File | null
       if (pdfFile && pdfFile.size > 0) {
-        try {
-          await Faq.deleteMany({ totemId: id })
+        await Faq.deleteMany({ totemId: id })
 
-          const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer())
-          const pdfFileName = `${Date.now()}-${pdfFile.name}`
+        const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer())
+        const pdfFileName = `${Date.now()}-${pdfFile.name}`
+        const pdfFileId = await subirPdfAGridFS(pdfBuffer, pdfFileName, pdfFile.type)
+        const extractedText = await extractTextFromPdfBuffer(pdfBuffer)
+        const { items } = parseTotemKnowledgeDocument(extractedText)
+        const pdfUrl = `/api/contents/file/${pdfFileId}`
 
-          const pdfFileId = await subirPdfAGridFS(pdfBuffer, pdfFileName, pdfFile.type)
-          const extractedText = await extractTextFromPdfBuffer(pdfBuffer)
-          const { items } = parseTotemKnowledgeDocument(extractedText)
+        const document = await DocumentModel.create({
+          name: pdfFile.name,
+          type: "faq_pdf",
+          fileId: pdfFileId,
+          fileUrl: pdfUrl,
+          mimeType: pdfFile.type,
+          extractedText,
+        })
 
-          const document = await DocumentModel.create({
-            name: pdfFile.name,
-            type: "faq_pdf",
-            fileId: pdfFileId,
-            mimeType: pdfFile.type,
-            extractedText,
-          })
-
-          await Faq.create({
-            title: `FAQ - ${nombre || totem.nombre}`,
-            campusId: null,
-            totemId: id,
-            documentId: document._id,
-            pdfFileId,
-            items,
-            isActive: true,
-          })
-        } catch (pdfError) {
-          console.error("Error procesando PDF de FAQ:", pdfError)
-        }
+        await Faq.create({
+          title: `FAQ - ${nombre || totem.nombre}`,
+          campusId: null,
+          totemId: id,
+          documentId: document._id,
+          pdfFileId,
+          pdfUrl,
+          items,
+          isActive: true,
+        })
       }
 
       return NextResponse.json(updated)
@@ -274,15 +272,13 @@ export async function PUT(request: Request, { params }: RouteContext) {
           update.nombre || totem.nombre,
           body.faqPdf as UploadedPdfInput
         )
-        if (faqResult.itemsCount === 0) {
-          return NextResponse.json(
-            {
-              error:
-                "El PDF se guardó pero no se detectaron preguntas. Usa el formato DOCUMENTO DE CONOCIMIENTO con PREGUNTA:/RESPUESTA:.",
-            },
-            { status: 422 }
-          )
-        }
+        return NextResponse.json({
+          ...(updated?.toObject?.() ?? updated),
+          faqLinked: true,
+          faqItemsCount: faqResult.itemsCount,
+          faqExtractedOk: faqResult.extractedOk,
+          faqWarning: faqResult.warning ?? null,
+        })
       } catch (pdfError) {
         console.error("Error procesando PDF Cloudinary:", pdfError)
         const msg =

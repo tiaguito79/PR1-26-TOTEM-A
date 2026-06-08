@@ -3,9 +3,16 @@ import { createRequire } from "module"
 const require = createRequire(import.meta.url)
 
 export async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
-  const { extractText } = require("unpdf")
-  const result = await extractText(new Uint8Array(buffer), { mergePages: true })
-  return typeof result.text === "string" ? result.text : (result.text as string[]).join("\n")
+  try {
+    const { extractText } = require("unpdf")
+    const result = await extractText(new Uint8Array(buffer), { mergePages: true })
+    const text =
+      typeof result.text === "string" ? result.text : (result.text as string[]).join("\n")
+    return text.trim()
+  } catch (error) {
+    console.error("Error extrayendo texto del PDF:", error)
+    return ""
+  }
 }
 
 export type FaqItem = { question: string; answer: string }

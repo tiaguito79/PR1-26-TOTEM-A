@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
-import { fetchRemoteBuffer } from "@/lib/cloudinary-server"
+import { fetchCloudinaryPdfBuffer, fetchRemoteBuffer } from "@/lib/cloudinary-server"
 import {
   buildFaqSearchParagraphs,
   extractTextFromPdfBuffer,
@@ -48,9 +48,14 @@ export async function loadFaqKnowledgeForDisplay(faq: LeanFaq) {
     pdfUrl = `/api/contents/file/${faq.pdfFileId}`
   }
 
-  if (pdfUrl && !extractedText.trim()) {
+  if (!extractedText.trim() && (pdfUrl || faq.pdfCloudinaryPublicId)) {
     try {
-      const pdfBuffer = await fetchRemoteBuffer(pdfUrl)
+      const pdfBuffer = faq.pdfCloudinaryPublicId
+        ? await fetchCloudinaryPdfBuffer({
+            url: pdfUrl || "",
+            publicId: faq.pdfCloudinaryPublicId,
+          })
+        : await fetchRemoteBuffer(pdfUrl!)
       extractedText = await extractTextFromPdfBuffer(pdfBuffer)
 
       if (faq.documentId && extractedText.trim()) {

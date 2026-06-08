@@ -2,7 +2,7 @@ import mongoose from "mongoose"
 import Content from "@/models/Content"
 import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
-import { deleteCloudinaryAsset, fetchRemoteBuffer } from "@/lib/cloudinary-server"
+import { deleteCloudinaryAsset, fetchCloudinaryPdfBuffer } from "@/lib/cloudinary-server"
 import { eliminarArchivoGridFS } from "@/lib/gridfs"
 import {
   extractTextFromPdfBuffer,
@@ -20,6 +20,14 @@ export type UploadedPdfInput = {
   url: string
   publicId: string
   name: string
+}
+
+export type FaqProcessResult = {
+  document: InstanceType<typeof DocumentModel>
+  faq: InstanceType<typeof Faq>
+  itemsCount: number
+  extractedOk: boolean
+  warning?: string
 }
 
 export async function createContentsFromCloudinary(
@@ -85,10 +93,29 @@ export async function processFaqPdfFromCloudinary(
   pdf: UploadedPdfInput,
   totemId: mongoose.Types.ObjectId | string,
   totemNombre: string
-) {
-  const pdfBuffer = await fetchRemoteBuffer(pdf.url)
-  const extractedText = await extractTextFromPdfBuffer(pdfBuffer)
-  const { items } = parseTotemKnowledgeDocument(extractedText)
+): Promise<FaqProcessResult> {
+  let extractedText = ""
+  let items: Array<{ question: string; answer: string }> = []
+  let warning: string | undefined
+
+  try {
+    const pdfBuffer = await fetchCloudinaryPdfBuffer(pdf)
+    extractedText = await extractTextFromPdfBuffer(pdfBuffer)
+
+    if (extractedText) {
+      const parsed = parseTotemKnowledgeDocument(extractedText)
+      items = parsed.items
+    } else {
+      warning =
+        "El PDF se vinculó al tótem, pero no se pudo extraer texto. Verifica que el PDF tenga texto seleccionable."
+    }
+  } catch (error) {
+    console.error("Error procesando contenido del PDF FAQ:", error)
+    warning =
+      error instanceof Error
+        ? `El PDF se guardó en Cloudinary, pero falló la lectura automática: ${error.message}`
+        : "El PDF se guardó, pero falló la lectura automática del contenido."
+  }
 
   const document = await DocumentModel.create({
     name: pdf.name,
@@ -110,7 +137,18 @@ export async function processFaqPdfFromCloudinary(
     isActive: true,
   })
 
-  return { document, faq, itemsCount: items.length }
+  if (!warning && items.length === 0 && extractedText) {
+    warning =
+      "El PDF se vinculó, pero no se detectaron preguntas. Usa el formato DOCUMENTO DE CONOCIMIENTO con PREGUNTA:/RESPUESTA:."
+  }
+
+  return {
+    document,
+    faq,
+    itemsCount: items.length,
+    extractedOk: Boolean(extractedText),
+    warning,
+  }
 }
 
 export async function replaceTotemFaqFromCloudinary(

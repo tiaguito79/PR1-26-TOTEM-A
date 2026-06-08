@@ -355,7 +355,20 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
       }
 
       const newTotem = await response.json()
-      toast.success("Tótem creado exitosamente.")
+      if (faqPdfPayload && !newTotem.faqLinked) {
+        toast.error(
+          "El tótem se creó, pero el PDF de FAQ no se vinculó. Edita el tótem y vuelve a subir el documento."
+        )
+      } else if (faqPdfPayload && newTotem.faqWarning) {
+        toast.warning(newTotem.faqWarning)
+        toast.success("Tótem creado. El PDF quedó vinculado.")
+      } else {
+        toast.success(
+          faqPdfPayload
+            ? `Tótem creado con ${newTotem.faqItemsCount ?? 0} preguntas del PDF.`
+            : "Tótem creado exitosamente."
+        )
+      }
       await onSave?.(newTotem)
       onOpenChange(false)
     } catch (error) {

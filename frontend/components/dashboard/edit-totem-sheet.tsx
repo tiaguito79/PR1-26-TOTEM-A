@@ -259,6 +259,12 @@ export function EditTotemSheet({
     try {
       const token = localStorage.getItem("token")
       const bloquesValidos = infoBloques.filter((b) => b.titulo.trim() && b.contenido.trim())
+      let updateResult: {
+        faqLinked?: boolean
+        faqItemsCount?: number
+        faqWarning?: string | null
+      } | null = null
+      const uploadedFaqPdf = Boolean(faqPdf)
 
       if (templateChanged && selectedTemplateObj) {
         toast.info("Subiendo archivos a Cloudinary...")
@@ -307,6 +313,7 @@ export function EditTotemSheet({
           toast.error(err.error || "Error al actualizar el tótem con nueva plantilla.")
           return
         }
+        updateResult = await response.json().catch(() => null)
       } else if (faqPdf) {
         toast.info("Subiendo PDF de FAQ...")
         const uploadedPdf = await uploadFileToCloudinary(faqPdf, "raw")
@@ -336,6 +343,7 @@ export function EditTotemSheet({
           toast.error(err.error || "Error al actualizar el tótem.")
           return
         }
+        updateResult = await response.json().catch(() => null)
       } else {
         const response = await fetch(`/api/totems/${totem.id}`, {
           method: "PUT",
@@ -358,7 +366,18 @@ export function EditTotemSheet({
         }
       }
 
-      toast.success("Tótem actualizado exitosamente.")
+      if (uploadedFaqPdf && updateResult?.faqWarning) {
+        toast.warning(updateResult.faqWarning)
+        toast.success(
+          `Tótem actualizado. PDF vinculado con ${updateResult.faqItemsCount ?? 0} preguntas detectadas.`
+        )
+      } else if (uploadedFaqPdf && updateResult?.faqLinked) {
+        toast.success(
+          `Tótem actualizado. PDF vinculado con ${updateResult.faqItemsCount ?? 0} preguntas detectadas.`
+        )
+      } else {
+        toast.success("Tótem actualizado exitosamente.")
+      }
       await onSave?.()
       onOpenChange(false)
     } catch (error) {

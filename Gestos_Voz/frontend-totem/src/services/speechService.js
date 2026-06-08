@@ -1,3 +1,5 @@
+import { buscarRespuestaFaq } from "../utils/faqSearch";
+
 let recognitionInstance = null;
 let recognitionStopped = false;
 
@@ -38,7 +40,7 @@ export const iniciarReconocimiento = (setEstado, setTexto, setRespuesta, onActiv
       console.log("📦 faqData en el momento de hablar:", faqData);
       console.log("🎤 Mensaje:", mensaje);
 
-      const respuesta = buscarEnFaq(mensaje, faqData);
+      const respuesta = buscarRespuestaFaq(mensaje, faqData);
       setRespuesta(respuesta);
       hablar(respuesta);
 
@@ -68,51 +70,6 @@ export const detenerReconocimiento = () => {
   if (recognitionInstance) {
     try { recognitionInstance.stop(); recognitionInstance = null; } catch (_) {}
   }
-};
-
-const normalizar = (texto) =>
-  texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[¿?¡!.,;:]/g, "");
-
-const buscarEnFaq = (mensajeUsuario, faqData) => {
-  const items = faqData?.items || [];
-
-  if (items.length === 0) {
-    return "Por el momento no tengo información disponible.";
-  }
-
-  const inputNorm = normalizar(mensajeUsuario);
-  const palabrasInput = inputNorm.split(" ").filter((p) => p.length > 2);
-
-  let mejorPuntaje = 0;
-  let mejorRespuesta = null;
-
-  for (const item of items) {
-    const preguntaNorm = normalizar(item.question);
-    const palabrasPregunta = preguntaNorm.split(" ").filter((p) => p.length > 2);
-
-    let coincidencias = 0;
-    for (const palabra of palabrasInput) {
-      if (preguntaNorm.includes(palabra)) coincidencias++;
-    }
-    for (const palabra of palabrasPregunta) {
-      if (inputNorm.includes(palabra)) coincidencias++;
-    }
-
-    if (coincidencias > mejorPuntaje) {
-      mejorPuntaje = coincidencias;
-      mejorRespuesta = item.answer;
-    }
-  }
-
-  if (mejorPuntaje >= 1 && mejorRespuesta) {
-    return mejorRespuesta;
-  }
-
-  return "No encontré información sobre eso. Abre la mano para ver todas las preguntas frecuentes.";
 };
 
 const hablar = (texto) => {

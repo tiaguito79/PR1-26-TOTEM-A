@@ -1,5 +1,15 @@
+import { getApiBaseUrl } from "../services/api";
+
+function resolvePdfUrl(pdfUrl) {
+  if (!pdfUrl) return null;
+  if (pdfUrl.startsWith("http://") || pdfUrl.startsWith("https://")) return pdfUrl;
+  return `${getApiBaseUrl()}${pdfUrl.startsWith("/") ? pdfUrl : `/${pdfUrl}`}`;
+}
+
 export default function FaqView({ faq, totemName }) {
   const items = faq?.items || [];
+  const pdfHref = resolvePdfUrl(faq?.pdfUrl);
+  const hasPdf = Boolean(pdfHref);
 
   return (
     <div className="faq-layout">
@@ -22,9 +32,19 @@ export default function FaqView({ faq, totemName }) {
           <span className="faq-hero-tag">AYUDA</span>
           <h1>{faq?.title || "Preguntas Frecuentes"}</h1>
           <p>
-            Encuentra respuestas rápidas a las dudas más comunes de los usuarios
-            del tótem.
+            Pregunta en voz alta o consulta el documento PDF cargado por el
+            administrador.
           </p>
+          {hasPdf && (
+            <a
+              className="faq-pdf-link"
+              href={pdfHref}
+              target="_blank"
+              rel="noreferrer"
+            >
+              📄 Ver documento PDF{faq.pdfName ? `: ${faq.pdfName}` : ""}
+            </a>
+          )}
         </div>
       </section>
 
@@ -33,9 +53,15 @@ export default function FaqView({ faq, totemName }) {
 
         {items.length === 0 ? (
           <div className="faq-empty-card">
-            <h3>No hay preguntas frecuentes disponibles</h3>
+            <h3>
+              {hasPdf
+                ? "Pregunta con voz sobre el PDF cargado"
+                : "No hay preguntas frecuentes disponibles"}
+            </h3>
             <p>
-              El administrador aún no ha cargado información para este tótem.
+              {hasPdf
+                ? "El asistente de voz buscará respuestas en el contenido del PDF. También puedes abrir el documento desde el enlace superior."
+                : "El administrador aún no ha cargado información para este tótem."}
             </p>
           </div>
         ) : (

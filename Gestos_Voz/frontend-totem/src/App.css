@@ -426,6 +426,19 @@ backdrop-filter: blur(4px);
   color: #d5e1ef;
 }
 
+.faq-pdf-link {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(0, 232, 208, 0.12);
+  border: 1px solid rgba(0, 232, 208, 0.28);
+  color: #b9fff5;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .faq-section {
   margin-top: 16px;
 }

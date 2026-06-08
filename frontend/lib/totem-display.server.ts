@@ -1,8 +1,10 @@
 import mongoose from "mongoose"
 import Ad from "@/models/Ad"
 import Content from "@/models/Content"
+import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
 import Totem from "@/models/Totem"
+import { buildFaqSearchParagraphs, parseFaqText } from "@/lib/pdf-service"
 import { resolveTotemRef } from "@/lib/totem-resolve"
 import {
   getTemplateMediaRequirements,
@@ -155,7 +157,14 @@ export async function getTotemMediaForDisplay(totemRef: string) {
 export async function getTotemFaqForDisplay(totemRef: string) {
   const totem = await resolveTotemRef(totemRef)
   if (!totem) {
-    return { hasFaq: false, items: [], title: "Preguntas Frecuentes" }
+    return {
+      hasFaq: false,
+      items: [],
+      paragraphs: [],
+      title: "Preguntas Frecuentes",
+      pdfUrl: null,
+      pdfName: null,
+    }
   }
 
   const faq = await Faq.findOne({
@@ -166,12 +175,53 @@ export async function getTotemFaqForDisplay(totemRef: string) {
     .lean()
 
   if (!faq) {
-    return { hasFaq: false, items: [], title: "Preguntas Frecuentes" }
+    return {
+      hasFaq: false,
+      items: [],
+      paragraphs: [],
+      title: "Preguntas Frecuentes",
+      pdfUrl: null,
+      pdfName: null,
+    }
   }
 
+  let extractedText = ""
+  let pdfUrl = faq.pdfUrl || null
+  let pdfName: string | null = null
+  let items = (faq.items ?? []) as Array<{ question: string; answer: string }>
+
+  if (faq.documentId) {
+    const document = await DocumentModel.findById(faq.documentId)
+      .select("extractedText fileUrl name fileId")
+      .lean()
+
+    if (document) {
+      extractedText = document.extractedText || ""
+      pdfUrl =
+        pdfUrl ||
+        document.fileUrl ||
+        (document.fileId ? `/api/contents/file/${document.fileId}` : null)
+      pdfName = document.name || null
+
+      if (items.length === 0 && extractedText) {
+        items = parseFaqText(extractedText)
+      }
+    }
+  }
+
+  if (!pdfUrl && faq.pdfFileId) {
+    pdfUrl = `/api/contents/file/${faq.pdfFileId}`
+  }
+
+  const paragraphs = buildFaqSearchParagraphs(extractedText, items)
+
   return {
-    hasFaq: true,
+    hasFaq: items.length > 0 || paragraphs.length > 0 || Boolean(pdfUrl),
     title: faq.title,
-    items: faq.items ?? [],
+    items,
+    paragraphs,
+    pdfUrl,
+    pdfName,
+    hasPdf: Boolean(pdfUrl),
   }
 }

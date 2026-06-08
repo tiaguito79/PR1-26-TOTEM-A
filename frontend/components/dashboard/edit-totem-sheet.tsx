@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { SheetUploadOverlay } from "./sheet-upload-overlay"
 import { uploadTotemFaqPdf } from "@/lib/faq-pdf-upload"
 import { downloadTotemKnowledgeTemplate } from "@/lib/totem-knowledge-template"
 import { getTodayDateString, validateTotemContentDates } from "@/lib/totem-dates"
@@ -93,6 +94,7 @@ export function EditTotemSheet({
   onSave,
 }: EditTotemSheetProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadMessage, setUploadMessage] = useState("Guardando cambios...")
   const [nombre, setNombre] = useState("")
   const [selectedSede, setSelectedSede] = useState("")
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
@@ -257,6 +259,7 @@ export function EditTotemSheet({
     if (!totem || !selectedTemplate) return
 
     setIsSubmitting(true)
+    setUploadMessage("Guardando cambios...")
 
     try {
       const token = localStorage.getItem("token")
@@ -269,21 +272,22 @@ export function EditTotemSheet({
       const uploadedFaqPdf = Boolean(faqPdf)
 
       if (templateChanged && selectedTemplateObj) {
-        toast.info("Subiendo archivos a Cloudinary...")
+        setUploadMessage("Subiendo archivos multimedia...")
 
         const archivos = await uploadTemplateMedia(
           imagenes,
           videos,
           selectedTemplateObj.req.images,
-          selectedTemplateObj.req.videos,
-          (message) => toast.info(message)
+          selectedTemplateObj.req.videos
         )
 
         let faqPdfPayload = null
         if (faqPdf) {
-          toast.info("Guardando PDF de FAQ en MongoDB...")
+          setUploadMessage("Guardando documento de conocimiento...")
           faqPdfPayload = await uploadTotemFaqPdf(faqPdf, token || "")
         }
+
+        setUploadMessage("Actualizando tótem...")
 
         const response = await fetch(`/api/totems/${totem.id}`, {
           method: "PUT",
@@ -312,8 +316,9 @@ export function EditTotemSheet({
         }
         updateResult = await response.json().catch(() => null)
       } else if (faqPdf) {
-        toast.info("Guardando PDF de FAQ en MongoDB...")
+        setUploadMessage("Guardando documento de conocimiento...")
         const faqPdfPayload = await uploadTotemFaqPdf(faqPdf, token || "")
+        setUploadMessage("Actualizando tótem...")
 
         const response = await fetch(`/api/totems/${totem.id}`, {
           method: "PUT",
@@ -338,6 +343,7 @@ export function EditTotemSheet({
         }
         updateResult = await response.json().catch(() => null)
       } else {
+        setUploadMessage("Actualizando tótem...")
         const response = await fetch(`/api/totems/${totem.id}`, {
           method: "PUT",
           headers: {
@@ -392,8 +398,9 @@ export function EditTotemSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md md:max-w-lg bg-card border-border p-0 flex flex-col h-full overflow-hidden"
+        className="relative w-full sm:max-w-md md:max-w-lg bg-card border-border p-0 flex flex-col h-full overflow-hidden"
       >
+        <SheetUploadOverlay visible={isSubmitting} message={uploadMessage} />
         <SheetHeader className="p-6 pb-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">

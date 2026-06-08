@@ -138,7 +138,7 @@ export default function TotemScreen() {
       ) : (
         <TotemTemplateView totem={totem} media={media} />
       )}
-      <GestureDetector onDetect={activarFAQ} />
+      {!showFaq && <GestureDetector onDetect={activarFAQ} />}
     </div>
   );
 }

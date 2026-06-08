@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { SheetUploadOverlay } from "./sheet-upload-overlay"
 import { TotemPreviewDialog } from "./totem-preview-dialog"
 import { TotemNamePresetsPanel } from "./totem-name-presets-panel"
 import { uploadFileToCloudinary, uploadTemplateMedia } from "@/lib/cloudinary-client"
@@ -72,6 +73,7 @@ interface NewTotemSheetProps {
 
 export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadMessage, setUploadMessage] = useState("Subiendo archivos...")
   const [nombre, setNombre] = useState("")
   const [selectedSede, setSelectedSede] = useState("")
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
@@ -292,26 +294,26 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
     }
 
     setIsSubmitting(true)
+    setUploadMessage("Subiendo archivos multimedia...")
 
     try {
       const token = localStorage.getItem("token")
       if (!selectedTemplateObj) return
 
-      toast.info("Subiendo archivos a Cloudinary...")
-
       const archivos = await uploadTemplateMedia(
         imagenes,
         videos,
         selectedTemplateObj.req.images,
-        selectedTemplateObj.req.videos,
-        (message) => toast.info(message)
+        selectedTemplateObj.req.videos
       )
 
       let faqPdfPayload = null
       if (faqPdf) {
-        toast.info("Guardando PDF de FAQ en MongoDB...")
+        setUploadMessage("Guardando documento de conocimiento...")
         faqPdfPayload = await uploadTotemFaqPdf(faqPdf, token || "")
       }
+
+      setUploadMessage("Creando tótem...")
 
       const bloquesValidos = infoBloques.filter((b) => b.titulo.trim() && b.contenido.trim())
 
@@ -403,8 +405,9 @@ export function NewTotemSheet({ open, onOpenChange, onSave }: NewTotemSheetProps
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md md:max-w-lg bg-card border-border p-0 flex flex-col h-full overflow-hidden"
+        className="relative w-full sm:max-w-md md:max-w-lg bg-card border-border p-0 flex flex-col h-full overflow-hidden"
       >
+        <SheetUploadOverlay visible={isSubmitting} message={uploadMessage} />
         <SheetHeader className="p-6 pb-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">

@@ -6,12 +6,11 @@ export default function VoiceAssistant({ onActivarFaq, faqData }) {
   const [estado, setEstado] = useState("iniciando");
   const [texto, setTexto] = useState("");
   const [respuesta, setRespuesta] = useState("");
-  const [minimizado, setMinimizado] = useState(false);
+  const [expandido, setExpandido] = useState(false);
 
   const onActivarFaqRef = useRef(onActivarFaq);
   const faqDataRef = useRef(null);
 
-  // Mantiene las refs siempre actualizadas sin reiniciar el reconocimiento
   useEffect(() => { onActivarFaqRef.current = onActivarFaq; }, [onActivarFaq]);
   useEffect(() => { faqDataRef.current = faqData; }, [faqData]);
 
@@ -21,73 +20,111 @@ export default function VoiceAssistant({ onActivarFaq, faqData }) {
       setTexto,
       setRespuesta,
       () => onActivarFaqRef.current?.(),
-      () => faqDataRef.current   // <-- getter que siempre devuelve el FAQ actualizado
+      () => faqDataRef.current
     );
     return () => detenerReconocimiento();
   }, []);
 
+  useEffect(() => {
+    if (texto || respuesta) setExpandido(true);
+  }, [texto, respuesta]);
+
   const etiquetaEstado = {
-    iniciando:    "Iniciando...",
-    escuchando:   "🎤 Escuchando...",
-    detectado:    "✅ Voz detectada",
-    esperando:    "⏳ Esperando voz...",
-    error:        "❌ Error de micrófono",
-    no_soportado: "❌ No soportado",
+    iniciando: "Iniciando",
+    escuchando: "Escuchando",
+    detectado: "Respondiendo",
+    esperando: "Listo",
+    error: "Sin micrófono",
+    no_soportado: "No soportado",
   };
 
-  const colorEstado = {
-    iniciando:    "#a8bbd0",
-    escuchando:   "#00e8d0",
-    detectado:    "#52ffa8",
-    esperando:    "#a8bbd0",
-    error:        "#ff7b7b",
-    no_soportado: "#ff7b7b",
+  const estadoClase = {
+    iniciando: "idle",
+    escuchando: "listening",
+    detectado: "speaking",
+    esperando: "idle",
+    error: "error",
+    no_soportado: "error",
   };
 
   return (
-    <div className="voice-assistant-box">
-      <div className="voice-assistant-header">
-        <span>Asistente de Voz</span>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span className="voice-status" style={{ color: colorEstado[estado] || "#a8bbd0" }}>
-            {etiquetaEstado[estado] || estado}
-          </span>
-          <button
-            className="voice-minimize-btn"
-            onClick={() => setMinimizado((v) => !v)}
-            title={minimizado ? "Expandir" : "Minimizar"}
-          >
-            {minimizado ? "▲" : "▼"}
-          </button>
+    <div className={`voice-avatar-widget ${expandido ? "expanded" : ""}`}>
+      <button
+        type="button"
+        className="voice-avatar-trigger"
+        onClick={() => setExpandido((v) => !v)}
+        aria-label="Asistente de voz"
+      >
+        <div className={`voice-avatar-ring ${estadoClase[estado] || "idle"}`}>
+          <div className="voice-avatar-face">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="30" fill="url(#avatarGradient)" />
+              <ellipse cx="32" cy="38" rx="16" ry="12" fill="rgba(255,255,255,0.18)" />
+              <circle cx="24" cy="28" r="4" fill="#ffffff" />
+              <circle cx="40" cy="28" r="4" fill="#ffffff" />
+              <circle cx="24" cy="28" r="2" fill="#0d2b45" />
+              <circle cx="40" cy="28" r="2" fill="#0d2b45" />
+              <path
+                d="M24 42 Q32 48 40 42"
+                stroke="#ffffff"
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+              />
+              <defs>
+                <linearGradient id="avatarGradient" x1="0" y1="0" x2="64" y2="64">
+                  <stop offset="0%" stopColor="#1ec8ff" />
+                  <stop offset="100%" stopColor="#00e8d0" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
         </div>
-      </div>
+        <span className="voice-avatar-label">Asistente</span>
+        <span className={`voice-avatar-status ${estadoClase[estado] || "idle"}`}>
+          {etiquetaEstado[estado] || estado}
+        </span>
+      </button>
 
-      {!minimizado && (
-        <div className="voice-assistant-body">
+      {expandido && (
+        <div className="voice-avatar-panel">
+          <div className="voice-avatar-panel-header">
+            <span>Asistente de Voz</span>
+            <button
+              type="button"
+              className="voice-avatar-close"
+              onClick={() => setExpandido(false)}
+              aria-label="Cerrar panel"
+            >
+              ×
+            </button>
+          </div>
+
           <div className="voice-wave-container">
             <div className={`voice-wave ${estado === "escuchando" ? "active" : ""}`}>
               {[...Array(5)].map((_, i) => <span key={i} className="voice-bar" />)}
             </div>
-            <span className="voice-mic-icon">🎙️</span>
           </div>
 
           {texto && (
             <div className="voice-bubble input">
-              <span className="voice-bubble-label">Escuché:</span>
+              <span className="voice-bubble-label">Escuché</span>
               <p>{texto}</p>
             </div>
           )}
 
           {respuesta && (
             <div className="voice-bubble response">
-              <span className="voice-bubble-label">Respuesta:</span>
+              <span className="voice-bubble-label">Respuesta</span>
               <p>{respuesta}</p>
             </div>
           )}
 
-          <div className="voice-help">
-            Haz una pregunta en voz alta sobre las consultas disponibles.
-          </div>
+          {!texto && !respuesta && (
+            <p className="voice-help">
+              Pregunta en voz alta sobre horarios, ubicación o contacto.
+            </p>
+          )}
         </div>
       )}
     </div>

@@ -71,11 +71,10 @@ export async function authenticateTotemDevice(usuario: string, contrasena: strin
   }
 
   if (totem.estado === "Inactivo") {
-    throw new AuthError("Este tótem está inactivo. Contacta al administrador.", 403)
-  }
-
-  if (totem.estado === "En Mantenimiento") {
-    throw new AuthError("Este tótem está en mantenimiento. Intenta más tarde.", 403)
+    throw new AuthError(
+      "Este tótem está inactivo. Actívalo desde el panel de administración.",
+      403
+    )
   }
 
   return totem

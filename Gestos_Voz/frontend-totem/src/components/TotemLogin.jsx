@@ -39,6 +39,12 @@ export default function TotemLogin({ onLoginSuccess, errorMessage = "" }) {
           <div className="totem-selector-alert">
             <strong>No se pudo acceder al tótem</strong>
             <p>{error || errorMessage}</p>
+            {(error || errorMessage)?.toLowerCase().includes("inactivo") && (
+              <p className="totem-login-hint">
+                Ve al panel admin → Dashboard → edita el tótem → cambia el estado a{" "}
+                <strong>Activo</strong>.
+              </p>
+            )}
           </div>
         )}
 

@@ -5,6 +5,7 @@ import GestureDetector from "../components/GestureDetector";
 import VoiceAssistant from "../components/VoiceAssistant";
 import TotemTemplateView from "../components/TotemTemplateView";
 import TotemLogin from "../components/TotemLogin";
+import TotemMaintenanceView from "../components/TotemMaintenanceView";
 import { getTotemDisplaySession } from "../services/api";
 import {
   clearTotemSession,
@@ -93,6 +94,21 @@ export default function TotemScreen() {
 
   if (needsLogin) {
     return <TotemLogin onLoginSuccess={handleLoginSuccess} errorMessage={error} />;
+  }
+
+  if (totem?.estado === "En Mantenimiento") {
+    return <TotemMaintenanceView totem={totem} />;
+  }
+
+  if (totem?.estado === "Inactivo") {
+    return (
+      <TotemMaintenanceView
+        totem={{
+          ...totem,
+          nombre: `${totem.nombre} (inactivo)`,
+        }}
+      />
+    );
   }
 
   return (

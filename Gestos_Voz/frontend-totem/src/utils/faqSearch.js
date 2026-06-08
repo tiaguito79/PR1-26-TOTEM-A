@@ -59,9 +59,9 @@ export function buscarRespuestaFaq(mensajeUsuario, faqData) {
     paragraphs.length === 0
   ) {
     if (faqData?.hasPdf) {
-      return "Tengo un documento cargado, pero no pude extraer información legible. Revisa el formato del PDF.";
+      return "Tengo el PDF cargado, pero no pude leer su contenido. El administrador debe volver a subir el documento con texto seleccionable.";
     }
-    return "Por el momento no tengo información disponible.";
+    return "No tengo un documento de conocimiento cargado para este tótem. Contacta al administrador.";
   }
 
   let mejorPuntaje = 0;

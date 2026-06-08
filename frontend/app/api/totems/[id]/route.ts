@@ -269,13 +269,30 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
     if (body.faqPdf?.url && body.faqPdf.publicId) {
       try {
-        await replaceTotemFaqFromCloudinary(
+        const faqResult = await replaceTotemFaqFromCloudinary(
           id,
           update.nombre || totem.nombre,
           body.faqPdf as UploadedPdfInput
         )
+        if (faqResult.itemsCount === 0) {
+          return NextResponse.json(
+            {
+              error:
+                "El PDF se guardó pero no se detectaron preguntas. Usa el formato DOCUMENTO DE CONOCIMIENTO con PREGUNTA:/RESPUESTA:.",
+            },
+            { status: 422 }
+          )
+        }
       } catch (pdfError) {
         console.error("Error procesando PDF Cloudinary:", pdfError)
+        const msg =
+          pdfError instanceof Error
+            ? pdfError.message
+            : "No se pudo procesar el PDF de preguntas frecuentes"
+        return NextResponse.json(
+          { error: `Error procesando PDF de FAQ: ${msg}` },
+          { status: 422 }
+        )
       }
     }
 

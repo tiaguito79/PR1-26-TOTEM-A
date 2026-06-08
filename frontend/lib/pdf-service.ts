@@ -29,24 +29,23 @@ function cleanInline(value: string) {
 }
 
 function extractSections(text: string) {
-  const sections: Array<{ title: string; content: string }> = []
-  const regex = /SECCI[OÓ]N:\s*([^\n]+)\n?/gi
-  const matches = [...text.matchAll(regex)]
+  const normalized = normalizeDocumentText(text)
+  const chunks = normalized
+    .split(/(?=SECCI[OÓ]N:\s*)/i)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
 
-  if (matches.length === 0) {
-    return [{ title: "DOCUMENTO", content: text }]
+  if (chunks.length === 0 || !/^SECCI[OÓ]N:/i.test(chunks[0] || "")) {
+    return [{ title: "DOCUMENTO", content: normalized }]
   }
 
-  for (let i = 0; i < matches.length; i++) {
-    const start = (matches[i].index ?? 0) + matches[i][0].length
-    const end = i + 1 < matches.length ? (matches[i + 1].index ?? text.length) : text.length
-    sections.push({
-      title: matches[i][1].trim(),
-      content: text.slice(start, end).trim(),
-    })
-  }
-
-  return sections
+  return chunks.map((chunk) => {
+    const header = chunk.match(/^SECCI[OÓ]N:\s*([^\n]+)\s*/i)
+    return {
+      title: header ? header[1].trim() : "DOCUMENTO",
+      content: header ? chunk.slice(header[0].length).trim() : chunk,
+    }
+  })
 }
 
 function parseGeneralInfoSection(content: string): GeneralInfoItem[] {
@@ -61,6 +60,24 @@ function parseGeneralInfoSection(content: string): GeneralInfoItem[] {
       label: match[1].trim(),
       value: match[2].trim(),
     })
+  }
+
+  if (items.length > 0) return items
+
+  const inlineRegex =
+    /([A-Za-zÁÉÍÓÚáéíóúñÑ0-9][A-Za-zÁÉÍÓÚáéíóúñÑ0-9\s]{2,45}):\s*([\s\S]*?)(?=\s+[A-Za-zÁÉÍÓÚáéíóúñÑ0-9][A-Za-zÁÉÍÓÚáéíóúñÑ0-9\s]{2,45}:\s*|PREGUNTA:|SECCI[OÓ]N:|REGLA:|$)/gi
+  let match
+
+  while ((match = inlineRegex.exec(content)) !== null) {
+    const label = cleanInline(match[1])
+    const value = cleanInline(match[2])
+    if (
+      label &&
+      value &&
+      !/^(PREGUNTA|RESPUESTA|REGLA|SECCI[OÓ]N)$/i.test(label)
+    ) {
+      items.push({ label, value })
+    }
   }
 
   return items
@@ -124,6 +141,10 @@ export function parseTotemKnowledgeDocument(text: string): TotemKnowledgeDocumen
   }
 
   if (items.length === 0) items = parseFaqSection(normalized)
+  if (generalInfo.length === 0) {
+    const infoSection = normalized.split(/SECCI[OÓ]N:\s*PREGUNTAS FRECUENTES/i)[0]
+    generalInfo = parseGeneralInfoSection(infoSection)
+  }
   if (rules.length === 0) rules = parseRulesSection(normalized)
   if (items.length === 0) items = parseLegacyFaqText(normalized)
 

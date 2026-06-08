@@ -72,13 +72,13 @@ export default function FaqView({ faq, totemName }) {
           <div className="faq-empty-card">
             <h3>
               {hasPdf
-                ? "No se detectaron preguntas en el PDF"
-                : "No hay preguntas frecuentes disponibles"}
+                ? "El PDF está cargado pero no hay preguntas listadas"
+                : "No hay documento de conocimiento para este tótem"}
             </h3>
             <p>
               {hasPdf
-                ? "Verifica que el PDF use el formato PREGUNTA:/RESPUESTA: dentro de la sección PREGUNTAS FRECUENTES."
-                : "El administrador aún no ha cargado el documento de conocimiento para este tótem."}
+                ? "Pregunta por voz sobre horario, dirección o contacto. Si no responde, pide al administrador volver a subir el PDF con el formato oficial."
+                : "En el panel admin, edita este tótem y sube el PDF en formato DOCUMENTO DE CONOCIMIENTO PARA TÓTEM."}
             </p>
           </div>
         ) : (

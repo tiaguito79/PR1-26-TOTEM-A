@@ -101,7 +101,16 @@ async function createTotemFromCloudinary(body: {
 
   if (body.faqPdf?.url && body.faqPdf.publicId) {
     try {
-      await processFaqPdfFromCloudinary(body.faqPdf, newTotem._id, body.nombre)
+      const faqResult = await processFaqPdfFromCloudinary(
+        body.faqPdf,
+        newTotem._id,
+        body.nombre
+      )
+      if (faqResult.itemsCount === 0) {
+        console.warn(
+          "[POST totem] PDF de FAQ guardado pero sin preguntas detectadas. Verifica el formato del documento."
+        )
+      }
     } catch (pdfError) {
       console.error("[POST totem] ERROR procesando PDF Cloudinary:", pdfError)
     }

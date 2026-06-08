@@ -1,13 +1,9 @@
 import mongoose from "mongoose"
 import Ad from "@/models/Ad"
 import Content from "@/models/Content"
-import DocumentModel from "@/models/Document"
 import Faq from "@/models/Faq"
 import Totem from "@/models/Totem"
-import {
-  buildFaqSearchParagraphs,
-  parseTotemKnowledgeDocument,
-} from "@/lib/pdf-service"
+import { loadFaqKnowledgeForDisplay } from "@/lib/faq-document.server"
 import { resolveTotemRef } from "@/lib/totem-resolve"
 import {
   getTemplateMediaRequirements,
@@ -189,57 +185,10 @@ export async function getTotemFaqForDisplay(totemRef: string) {
       title: "Preguntas Frecuentes",
       pdfUrl: null,
       pdfName: null,
+      hasPdf: false,
+      extractedOk: false,
     }
   }
 
-  let extractedText = ""
-  let pdfUrl = faq.pdfUrl || null
-  let pdfName: string | null = null
-  let items = (faq.items ?? []) as Array<{ question: string; answer: string }>
-  let generalInfo: Array<{ label: string; value: string }> = []
-  let rules: string[] = []
-
-  if (faq.documentId) {
-    const document = await DocumentModel.findById(faq.documentId)
-      .select("extractedText fileUrl name fileId")
-      .lean()
-
-    if (document) {
-      extractedText = document.extractedText || ""
-      pdfUrl =
-        pdfUrl ||
-        document.fileUrl ||
-        (document.fileId ? `/api/contents/file/${document.fileId}` : null)
-      pdfName = document.name || null
-
-      if (extractedText) {
-        const parsed = parseTotemKnowledgeDocument(extractedText)
-        if (parsed.items.length > 0) items = parsed.items
-        generalInfo = parsed.generalInfo
-        rules = parsed.rules
-      }
-    }
-  }
-
-  if (!pdfUrl && faq.pdfFileId) {
-    pdfUrl = `/api/contents/file/${faq.pdfFileId}`
-  }
-
-  const paragraphs = buildFaqSearchParagraphs(extractedText, items, generalInfo, rules)
-
-  return {
-    hasFaq:
-      items.length > 0 ||
-      generalInfo.length > 0 ||
-      paragraphs.length > 0 ||
-      Boolean(pdfUrl),
-    title: faq.title,
-    items,
-    generalInfo,
-    rules,
-    paragraphs,
-    pdfUrl,
-    pdfName,
-    hasPdf: Boolean(pdfUrl),
-  }
+  return loadFaqKnowledgeForDisplay(faq)
 }
